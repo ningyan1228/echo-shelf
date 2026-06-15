@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A private, local-first web music player for files you own or are licensed to use."
+    />
+    <title>Echo Shelf</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Library navigation">
+        <div class="brand">
+          <img src="./assets/default-cover.svg" alt="" class="brand-mark" />
+          <div>
+            <strong>Echo Shelf</strong>
+            <span>Local music player</span>
+          </div>
+        </div>
+
+        <label class="import-button">
+          <input id="fileInput" type="file" accept="audio/*" multiple />
+          <span aria-hidden="true">+</span>
+          <span>导入本地音乐</span>
+        </label>
+
+        <nav class="nav-list">
+          <button class="nav-item active" data-view="library">曲库</button>
+          <button class="nav-item" data-view="queue">播放队列</button>
+          <button class="nav-item" data-view="playlists">歌单</button>
+          <button class="nav-item" data-view="lyrics">歌词</button>
+          <button class="nav-item" data-view="about">合规说明</button>
+        </nav>
+
+        <div class="storage-note">
+          <strong>隐私优先</strong>
+          <span>音频文件只在你的浏览器本地播放，不上传到服务器。</span>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Original web player</p>
+            <h1 id="viewTitle">曲库</h1>
+          </div>
+          <div class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <input id="searchInput" type="search" placeholder="搜索本地歌曲、歌手、文件名" />
+          </div>
+        </header>
+
+        <section id="libraryView" class="view active-view">
+          <div class="section-head">
+            <div>
+              <h2>本地音乐</h2>
+              <p>选择你拥有版权或已获授权的音频文件。</p>
+            </div>
+            <button id="clearLibraryBtn" class="ghost-button">清空列表</button>
+          </div>
+          <div id="trackList" class="track-list" aria-live="polite"></div>
+        </section>
+
+        <section id="queueView" class="view">
+          <div class="section-head">
+            <div>
+              <h2>播放队列</h2>
+              <p>队列仅保存在当前浏览器。</p>
+            </div>
+            <button id="clearQueueBtn" class="ghost-button">清空队列</button>
+          </div>
+          <div id="queueList" class="track-list"></div>
+        </section>
+
+        <section id="playlistsView" class="view">
+          <div class="section-head">
+            <div>
+              <h2>歌单</h2>
+              <p>创建你的本地歌单，不包含任何在线曲库。</p>
+            </div>
+            <form id="playlistForm" class="inline-form">
+              <input id="playlistName" type="text" maxlength="32" placeholder="新歌单名称" />
+              <button type="submit">新建</button>
+            </form>
+          </div>
+          <div id="playlistGrid" class="playlist-grid"></div>
+        </section>
+
+        <section id="lyricsView" class="view">
+          <div class="section-head">
+            <div>
+              <h2>歌词</h2>
+              <p>粘贴你有权使用的 LRC 或纯文本歌词。</p>
+            </div>
+            <button id="saveLyricsBtn" class="ghost-button">保存歌词</button>
+          </div>
+          <div class="lyrics-panel">
+            <textarea
+              id="lyricsInput"
+              placeholder="[00:12.00] 在这里粘贴歌词&#10;[00:18.00] 支持 LRC 时间轴"
+            ></textarea>
+            <div id="lyricsDisplay" class="lyrics-display">暂无歌词</div>
+          </div>
+        </section>
+
+        <section id="aboutView" class="view">
+          <div class="about-panel">
+            <h2>合规边界</h2>
+            <p>
+              Echo Shelf 是从零编写的原创网页播放器，不使用酷狗、MoeKoeMusic 或其他音乐平台的代码、
+              名称、图标、曲库、歌词、MV、账号系统或非公开接口。
+            </p>
+            <ul>
+              <li>仅播放用户主动选择的本地音频文件。</li>
+              <li>不提供搜索在线歌曲、下载、转存、缓存或会员绕过功能。</li>
+              <li>不上传音乐文件，浏览器刷新后需要重新选择本地文件。</li>
+              <li>发布时请只宣传为本地音乐播放器，不暗示官方平台关联。</li>
+            </ul>
+          </div>
+        </section>
+      </main>
+
+      <footer class="player">
+        <div class="now-playing">
+          <img id="coverArt" src="./assets/default-cover.svg" alt="" />
+          <div>
+            <strong id="nowTitle">未选择歌曲</strong>
+            <span id="nowArtist">导入本地音频开始播放</span>
+          </div>
+        </div>
+
+        <div class="transport">
+          <div class="transport-buttons">
+            <button id="prevBtn" title="上一首" aria-label="上一首">‹</button>
+            <button id="playBtn" class="primary-control" title="播放/暂停" aria-label="播放/暂停">▶</button>
+            <button id="nextBtn" title="下一首" aria-label="下一首">›</button>
+          </div>
+          <div class="progress-row">
+            <span id="currentTime">0:00</span>
+            <input id="progress" type="range" min="0" max="1000" value="0" />
+            <span id="duration">0:00</span>
+          </div>
+        </div>
+
+        <div class="player-tools">
+          <button id="shuffleBtn" title="随机播放" aria-label="随机播放">⇄</button>
+          <button id="repeatBtn" title="循环模式" aria-label="循环模式">↻</button>
+          <input id="volume" title="音量" type="range" min="0" max="1" step="0.01" value="0.85" />
+        </div>
+      </footer>
+    </div>
+
+    <audio id="audio"></audio>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
