@@ -4,6 +4,13 @@ const els = {
   searchInput: document.querySelector("#searchInput"),
   trackList: document.querySelector("#trackList"),
   queueList: document.querySelector("#queueList"),
+  studioView: document.querySelector("#studioView"),
+  visualizer: document.querySelector("#visualizer"),
+  visualizerTitle: document.querySelector("#visualizerTitle"),
+  buildMixBtn: document.querySelector("#buildMixBtn"),
+  trackCountStat: document.querySelector("#trackCountStat"),
+  durationStat: document.querySelector("#durationStat"),
+  queueStat: document.querySelector("#queueStat"),
   playlistGrid: document.querySelector("#playlistGrid"),
   playlistForm: document.querySelector("#playlistForm"),
   playlistName: document.querySelector("#playlistName"),
@@ -19,6 +26,7 @@ const els = {
   nextBtn: document.querySelector("#nextBtn"),
   shuffleBtn: document.querySelector("#shuffleBtn"),
   repeatBtn: document.querySelector("#repeatBtn"),
+  focusModeBtn: document.querySelector("#focusModeBtn"),
   progress: document.querySelector("#progress"),
   currentTime: document.querySelector("#currentTime"),
   duration: document.querySelector("#duration"),
@@ -29,6 +37,7 @@ const els = {
 const views = {
   library: document.querySelector("#libraryView"),
   queue: document.querySelector("#queueView"),
+  studio: document.querySelector("#studioView"),
   playlists: document.querySelector("#playlistsView"),
   lyrics: document.querySelector("#lyricsView"),
   about: document.querySelector("#aboutView"),
@@ -44,8 +53,15 @@ const state = {
   shuffle: false,
   repeat: "off",
   activeView: "library",
+  mood: localStorage.getItem("echoShelf.mood") || "default",
+  visualizerReady: false,
+  audioContext: null,
+  analyser: null,
+  source: null,
+  animationId: null,
 };
 
+document.body.dataset.mood = state.mood;
 els.audio.volume = Number(localStorage.getItem("echoShelf.volume") || "0.85");
 els.volume.value = String(els.audio.volume);
 
@@ -68,7 +84,7 @@ function makeTrack(file) {
   const title = parts.length > 1 ? parts.slice(1).join(" - ").trim() : cleanName;
 
   return {
-    id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
+    id: `${file.name}-${file.size}-${file.lastModified}-${makeId()}`,
     title,
     artist,
     fileName: file.name,
@@ -94,6 +110,7 @@ function setView(name) {
   els.viewTitle.textContent = {
     library: "曲库",
     queue: "播放队列",
+    studio: "声景",
     playlists: "歌单",
     lyrics: "歌词",
     about: "合规说明",
@@ -125,6 +142,7 @@ function render() {
   renderQueue();
   renderPlaylists();
   renderLyrics();
+  renderStudio();
   updateNowPlaying();
 }
 
@@ -234,6 +252,19 @@ function renderLyrics() {
     .join("");
 }
 
+function renderStudio() {
+  els.trackCountStat.textContent = String(state.tracks.length);
+  const totalDuration = state.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
+  els.durationStat.textContent = totalDuration ? formatTime(totalDuration) : "0:00";
+  els.queueStat.textContent = String(state.queue.length);
+  const current = state.tracks.find((track) => track.id === state.currentId);
+  els.visualizerTitle.textContent = current ? `${current.title} · ${current.artist}` : "等待播放";
+  document.querySelectorAll(".mood-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.mood === state.mood);
+  });
+  drawIdleVisualizer();
+}
+
 function playTrack(id) {
   const track = state.tracks.find((item) => item.id === id);
   if (!track) return;
@@ -241,6 +272,7 @@ function playTrack(id) {
   state.currentId = id;
   if (!state.queue.includes(id)) state.queue.push(id);
   els.audio.src = getUrl(track);
+  setupVisualizer();
   els.audio.play().catch(() => {});
   render();
 }
@@ -277,6 +309,92 @@ function updateNowPlaying() {
   els.shuffleBtn.classList.toggle("shuffle-on", state.shuffle);
   els.repeatBtn.classList.toggle("repeat-on", state.repeat !== "off");
   els.repeatBtn.textContent = state.repeat === "one" ? "①" : "↻";
+  els.focusModeBtn.classList.toggle("repeat-on", document.body.classList.contains("stage-mode"));
+}
+
+function setupVisualizer() {
+  if (state.visualizerReady) return;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+
+  state.audioContext = new AudioContext();
+  state.analyser = state.audioContext.createAnalyser();
+  state.analyser.fftSize = 128;
+  state.source = state.audioContext.createMediaElementSource(els.audio);
+  state.source.connect(state.analyser);
+  state.analyser.connect(state.audioContext.destination);
+  state.visualizerReady = true;
+  animateVisualizer();
+}
+
+function animateVisualizer() {
+  if (!els.visualizer || !state.analyser) return;
+  const canvas = els.visualizer;
+  const ctx = canvas.getContext("2d");
+  const data = new Uint8Array(state.analyser.frequencyBinCount);
+  const draw = () => {
+    state.animationId = requestAnimationFrame(draw);
+    state.analyser.getByteFrequencyData(data);
+    paintBars(ctx, canvas, data);
+  };
+  draw();
+}
+
+function drawIdleVisualizer() {
+  if (!els.visualizer || state.visualizerReady) return;
+  const canvas = els.visualizer;
+  const ctx = canvas.getContext("2d");
+  const bars = Array.from({ length: 48 }, (_, index) => {
+    const wave = Math.sin(index * 0.48 + Date.now() / 900);
+    return 45 + Math.max(0, wave) * 80;
+  });
+  paintBars(ctx, canvas, bars);
+}
+
+function paintBars(ctx, canvas, data) {
+  const { width, height } = canvas;
+  ctx.clearRect(0, 0, width, height);
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, getComputedStyle(document.body).getPropertyValue("--accent").trim());
+  gradient.addColorStop(1, getComputedStyle(document.body).getPropertyValue("--accent-2").trim());
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+  for (let i = 0; i < 8; i += 1) {
+    ctx.fillRect(0, (height / 8) * i, width, 1);
+  }
+  ctx.fillStyle = gradient;
+  const barWidth = width / data.length;
+  data.forEach((value, index) => {
+    const normalized = value / 255;
+    const barHeight = Math.max(8, normalized * (height * 0.78));
+    const x = index * barWidth;
+    const y = height - barHeight - 28;
+    roundedRect(ctx, x + 2, y, Math.max(3, barWidth - 4), barHeight, 10);
+  });
+}
+
+function roundedRect(ctx, x, y, width, height, radius) {
+  if (typeof ctx.roundRect === "function") {
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, radius);
+    ctx.fill();
+    return;
+  }
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.fill();
+}
+
+function makeId() {
+  return crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function addToQueue(id) {
@@ -288,7 +406,7 @@ function addToPlaylist(id) {
   if (!state.playlists.length) {
     const name = prompt("输入新歌单名称", "我的歌单");
     if (!name) return;
-    state.playlists.push({ id: crypto.randomUUID(), name: name.trim(), trackIds: [] });
+    state.playlists.push({ id: makeId(), name: name.trim(), trackIds: [] });
   }
 
   const names = state.playlists.map((playlist, index) => `${index + 1}. ${playlist.name}`).join("\n");
@@ -349,7 +467,7 @@ els.playlistForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const name = els.playlistName.value.trim();
   if (!name) return;
-  state.playlists.push({ id: crypto.randomUUID(), name, trackIds: [] });
+  state.playlists.push({ id: makeId(), name, trackIds: [] });
   els.playlistName.value = "";
   saveJson("echoShelf.playlists", state.playlists);
   renderPlaylists();
@@ -407,6 +525,32 @@ els.shuffleBtn.addEventListener("click", () => {
   updateNowPlaying();
 });
 
+els.focusModeBtn.addEventListener("click", () => {
+  document.body.classList.toggle("stage-mode");
+  updateNowPlaying();
+});
+
+document.querySelectorAll(".mood-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.mood = button.dataset.mood;
+    document.body.dataset.mood = state.mood;
+    localStorage.setItem("echoShelf.mood", state.mood);
+    renderStudio();
+  });
+});
+
+els.buildMixBtn.addEventListener("click", () => {
+  const ids = [...state.tracks.map((track) => track.id)];
+  for (let i = ids.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+  }
+  state.queue = ids.slice(0, Math.min(18, ids.length));
+  if (state.queue[0]) playTrack(state.queue[0]);
+  render();
+  setView("queue");
+});
+
 els.repeatBtn.addEventListener("click", () => {
   state.repeat = state.repeat === "off" ? "all" : state.repeat === "all" ? "one" : "off";
   updateNowPlaying();
@@ -423,6 +567,9 @@ els.progress.addEventListener("input", () => {
 });
 
 els.audio.addEventListener("play", updateNowPlaying);
+els.audio.addEventListener("play", () => {
+  if (state.audioContext?.state === "suspended") state.audioContext.resume();
+});
 els.audio.addEventListener("pause", updateNowPlaying);
 
 els.audio.addEventListener("loadedmetadata", () => {

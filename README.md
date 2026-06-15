@@ -6,6 +6,8 @@ Echo Shelf is an original, local-first web music player designed for public depl
 
 - Plays audio files that users select from their own device.
 - Keeps playlists and lyrics in browser local storage.
+- Provides an original soundscape workspace with audio visualization, mood themes, listening stats, and a random local mix builder.
+- Includes a stage mode for a focused now-playing experience.
 - Does not upload, proxy, cache, scrape, download, or distribute music files.
 - Does not use KuGou, MoeKoeMusic, or any other music platform API, code, name, icon, playlist, lyrics, MV, account system, or private endpoint.
 

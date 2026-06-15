@@ -30,6 +30,7 @@
         <nav class="nav-list">
           <button class="nav-item active" data-view="library">曲库</button>
           <button class="nav-item" data-view="queue">播放队列</button>
+          <button class="nav-item" data-view="studio">声景</button>
           <button class="nav-item" data-view="playlists">歌单</button>
           <button class="nav-item" data-view="lyrics">歌词</button>
           <button class="nav-item" data-view="about">合规说明</button>
@@ -73,6 +74,56 @@
             <button id="clearQueueBtn" class="ghost-button">清空队列</button>
           </div>
           <div id="queueList" class="track-list"></div>
+        </section>
+
+        <section id="studioView" class="view">
+          <div class="section-head">
+            <div>
+              <h2>声景工作台</h2>
+              <p>把本地音乐变成一块会呼吸的私人唱片墙。</p>
+            </div>
+            <button id="buildMixBtn" class="ghost-button">生成灵感队列</button>
+          </div>
+
+          <div class="studio-grid">
+            <div class="visualizer-card">
+              <canvas id="visualizer" width="960" height="360" aria-label="音频可视化"></canvas>
+              <div class="visualizer-caption">
+                <strong id="visualizerTitle">等待播放</strong>
+                <span>播放本地歌曲后，声波会跟随音乐变化。</span>
+              </div>
+            </div>
+
+            <div class="mood-card">
+              <h3>氛围主题</h3>
+              <div class="mood-buttons">
+                <button class="mood-button active" data-mood="default">
+                  <span style="--swatch:#5ee0b8"></span>清澈
+                </button>
+                <button class="mood-button" data-mood="ember">
+                  <span style="--swatch:#f06d5e"></span>余温
+                </button>
+                <button class="mood-button" data-mood="aurora">
+                  <span style="--swatch:#88a7ff"></span>极光
+                </button>
+              </div>
+
+              <div class="stat-grid">
+                <div>
+                  <strong id="trackCountStat">0</strong>
+                  <span>本地歌曲</span>
+                </div>
+                <div>
+                  <strong id="durationStat">0:00</strong>
+                  <span>总时长</span>
+                </div>
+                <div>
+                  <strong id="queueStat">0</strong>
+                  <span>队列</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section id="playlistsView" class="view">
@@ -148,6 +199,7 @@
         <div class="player-tools">
           <button id="shuffleBtn" title="随机播放" aria-label="随机播放">⇄</button>
           <button id="repeatBtn" title="循环模式" aria-label="循环模式">↻</button>
+          <button id="focusModeBtn" title="舞台模式" aria-label="舞台模式">□</button>
           <input id="volume" title="音量" type="range" min="0" max="1" step="0.01" value="0.85" />
         </div>
       </footer>
