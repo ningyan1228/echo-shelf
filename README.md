@@ -10,6 +10,7 @@
 - Keeps playlists and lyrics in browser local storage.
 - Provides an original soundscape workspace with audio visualization, mood themes, listening stats, and a random local mix builder.
 - Includes a stage mode for a focused now-playing experience.
+- Includes an optional radio-style open-audio view backed by Internet Archive, filtered toward CC0 / CC BY audio entries.
 - Does not upload, proxy, cache, scrape, download, or distribute music files.
 - Does not use any third-party music service API, code, name, icon, playlist, lyrics, video, account system, or private endpoint.
 
@@ -24,6 +25,8 @@ Do not deploy or modify it to:
 - Provide download, ripping, cache extraction, restricted-content access, or account automation features.
 - Use names, logos, screenshots, or visual identity from third-party music services.
 - Advertise the site as a replacement client for any official music platform.
+
+For open-music results, always show source and license links. Do not remove attribution requirements from CC BY works.
 
 No software project can guarantee absolute legal safety in every jurisdiction. For a public service, consult a qualified lawyer before adding online music sources or user-upload hosting.
 

@@ -31,7 +31,7 @@
           <button class="nav-item active" data-view="library" data-icon="⌂" title="曲库">曲库</button>
           <button class="nav-item" data-view="queue" data-icon="◎" title="播放队列">播放队列</button>
           <button class="nav-item" data-view="studio" data-icon="▥" title="声景">声景</button>
-          <button class="nav-item" data-view="open" data-icon="◇" title="开放音乐">开放音乐</button>
+          <button class="nav-item" data-view="open" data-icon="◉" title="收音机">收音机</button>
           <button class="nav-item" data-view="playlists" data-icon="♬" title="歌单">歌单</button>
           <button class="nav-item" data-view="lyrics" data-icon="≋" title="歌词">歌词</button>
           <button class="nav-item" data-view="about" data-icon="⚙" title="合规说明">合规说明</button>
@@ -86,7 +86,7 @@
                   <button type="button">▶</button>
                 </article>
                 <article class="mini-card rose">
-                  <strong>开放音乐</strong>
+                  <strong>开放电台</strong>
                   <span>CC 授权</span>
                   <button type="button" data-jump-view="open">▶</button>
                 </article>
@@ -185,14 +185,33 @@
         <section id="openView" class="view">
           <div class="section-head">
             <div>
-              <h2>开放音乐</h2>
-              <p>搜索公开授权音频；使用前请核对每首作品的授权链接。</p>
+              <h2>收音机</h2>
+              <p>从开放授权音频里生成临时电台；使用前请核对每首作品的授权链接。</p>
             </div>
             <form id="openMusicForm" class="inline-form">
-              <input id="openMusicQuery" type="text" maxlength="48" placeholder="搜索开放授权音乐" />
-              <button type="submit">搜索</button>
+              <input id="openMusicQuery" type="text" maxlength="48" placeholder="搜索电台关键词" />
+              <button type="submit">调频</button>
             </form>
           </div>
+
+          <div class="radio-hero">
+            <div>
+              <span class="radio-kicker">OPEN RADIO</span>
+              <strong id="radioTitle">开放频率</strong>
+              <p>选择一个频道，拾音匣会从公开授权音频中生成一组临时播放列表。</p>
+            </div>
+            <button id="radioShuffleBtn" type="button">随机调频</button>
+          </div>
+
+          <div class="radio-dial" aria-label="电台频道">
+            <button type="button" data-radio-query="piano">钢琴小馆</button>
+            <button type="button" data-radio-query="jazz">爵士夜航</button>
+            <button type="button" data-radio-query="ambient">环境声场</button>
+            <button type="button" data-radio-query="folk">民谣路边</button>
+            <button type="button" data-radio-query="electronic">电子波段</button>
+            <button type="button" data-radio-query="field recording">田野录音</button>
+          </div>
+
           <div class="source-note">
             数据来自 Internet Archive。仅筛选 CC0 / CC BY 方向的音频条目；本站不缓存、不下载、不隐藏来源。
           </div>

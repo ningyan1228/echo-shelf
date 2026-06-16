@@ -226,6 +226,82 @@ h2 {
   background: rgba(255, 255, 255, 0.62);
 }
 
+.radio-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 180px;
+  margin-top: 18px;
+  padding: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 8px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 82% 34%, rgba(255, 255, 255, 0.22), transparent 28%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0 2px, transparent 2px 24px),
+    linear-gradient(135deg, #111827, #007aff 56%, #34c759);
+  box-shadow: 0 22px 54px rgba(0, 122, 255, 0.18);
+}
+
+.radio-kicker {
+  display: inline-flex;
+  margin-bottom: 12px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.radio-hero strong {
+  display: block;
+  font-size: 38px;
+  font-weight: 860;
+}
+
+.radio-hero p {
+  max-width: 520px;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.radio-hero button,
+.radio-dial button {
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 8px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+.radio-hero button {
+  min-width: 120px;
+  min-height: 44px;
+  font-weight: 800;
+}
+
+.radio-dial {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(92px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.radio-dial button {
+  min-height: 42px;
+  color: var(--text);
+  border-color: rgba(0, 0, 0, 0.09);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.radio-dial button.active {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
 .search-box input,
 .inline-form input,
 .lyrics-panel textarea {
@@ -788,6 +864,18 @@ body[data-theme="dark"] .category-cloud button {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.08) inset,
     0 16px 42px rgba(0, 0, 0, 0.24);
+}
+
+body[data-theme="dark"] .radio-dial button {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.13);
+  background: rgba(28, 28, 30, 0.76);
+}
+
+body[data-theme="dark"] .radio-dial button.active {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
 body[data-theme="dark"] .topbar {
@@ -1532,6 +1620,15 @@ h1 {
   }
 
   .recommend-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .radio-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .radio-dial {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

@@ -8,6 +8,8 @@ const els = {
   openMusicQuery: document.querySelector("#openMusicQuery"),
   openMusicStatus: document.querySelector("#openMusicStatus"),
   openMusicResults: document.querySelector("#openMusicResults"),
+  radioTitle: document.querySelector("#radioTitle"),
+  radioShuffleBtn: document.querySelector("#radioShuffleBtn"),
   studioView: document.querySelector("#studioView"),
   visualizer: document.querySelector("#visualizer"),
   visualizerTitle: document.querySelector("#visualizerTitle"),
@@ -134,7 +136,7 @@ function setView(name) {
     library: "曲库",
     queue: "播放队列",
     studio: "声景",
-    open: "开放音乐",
+    open: "收音机",
     playlists: "歌单",
     lyrics: "歌词",
     about: "合规说明",
@@ -300,7 +302,7 @@ function renderStudio() {
 function renderOpenMusic() {
   if (!els.openMusicResults) return;
   if (!state.openResults.length) {
-    els.openMusicResults.innerHTML = `<div class="empty-state">搜索后会显示开放授权音频。</div>`;
+    els.openMusicResults.innerHTML = `<div class="empty-state">调频后会显示开放授权音频。</div>`;
     return;
   }
   els.openMusicResults.innerHTML = state.openResults.map((track, index) => trackRow(track, index, "open")).join("");
@@ -484,6 +486,24 @@ async function searchOpenMusic(query) {
   return Promise.all(docs.map(createArchiveTrack));
 }
 
+async function tuneRadio(query, label = "") {
+  els.openMusicQuery.value = query;
+  els.radioTitle.textContent = label || `“${query}” 频道`;
+  document.querySelectorAll("[data-radio-query]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.radioQuery === query);
+  });
+  els.openMusicStatus.textContent = "正在调频开放授权音频...";
+  els.openMusicResults.innerHTML = "";
+  try {
+    const results = (await searchOpenMusic(query)).filter(Boolean);
+    state.openResults = results;
+    els.openMusicStatus.textContent = results.length ? `调到 ${results.length} 首。播放前请查看来源和授权。` : "这个频道暂时没有可播放条目，换个频道试试。";
+    renderOpenMusic();
+  } catch (error) {
+    els.openMusicStatus.textContent = `${error.message || "调频失败"}。你仍然可以使用本地音乐。`;
+  }
+}
+
 function hasSimpleOpenLicense(doc) {
   const raw = Array.isArray(doc.licenseurl) ? doc.licenseurl[0] : doc.licenseurl || "";
   const license = raw.toLowerCase();
@@ -598,16 +618,17 @@ els.queueList.addEventListener("click", (event) => {
 
 els.openMusicForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  els.openMusicStatus.textContent = "正在搜索开放授权音频...";
-  els.openMusicResults.innerHTML = "";
-  try {
-    const results = (await searchOpenMusic(els.openMusicQuery.value)).filter(Boolean);
-    state.openResults = results;
-    els.openMusicStatus.textContent = results.length ? `找到 ${results.length} 首。播放前请查看来源和授权。` : "没有找到可播放条目，换个关键词试试。";
-    renderOpenMusic();
-  } catch (error) {
-    els.openMusicStatus.textContent = `${error.message || "搜索失败"}。你仍然可以使用本地音乐。`;
-  }
+  tuneRadio(els.openMusicQuery.value.trim() || "piano");
+});
+
+document.querySelectorAll("[data-radio-query]").forEach((button) => {
+  button.addEventListener("click", () => tuneRadio(button.dataset.radioQuery, button.textContent.trim()));
+});
+
+els.radioShuffleBtn.addEventListener("click", () => {
+  const channels = Array.from(document.querySelectorAll("[data-radio-query]"));
+  const channel = channels[Math.floor(Math.random() * channels.length)];
+  if (channel) tuneRadio(channel.dataset.radioQuery, channel.textContent.trim());
 });
 
 els.openMusicResults.addEventListener("click", (event) => {
