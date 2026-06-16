@@ -32,6 +32,7 @@ const els = {
   shuffleBtn: document.querySelector("#shuffleBtn"),
   repeatBtn: document.querySelector("#repeatBtn"),
   focusModeBtn: document.querySelector("#focusModeBtn"),
+  themeToggleBtn: document.querySelector("#themeToggleBtn"),
   progress: document.querySelector("#progress"),
   currentTime: document.querySelector("#currentTime"),
   duration: document.querySelector("#duration"),
@@ -60,6 +61,7 @@ const state = {
   repeat: "off",
   activeView: "library",
   mood: localStorage.getItem("lumaCrate.mood") || "default",
+  theme: localStorage.getItem("lumaCrate.theme") || "light",
   visualizerReady: false,
   audioContext: null,
   analyser: null,
@@ -69,6 +71,7 @@ const state = {
 };
 
 document.body.dataset.mood = state.mood;
+document.body.dataset.theme = state.theme;
 els.audio.volume = Number(localStorage.getItem("lumaCrate.volume") || "0.85");
 els.volume.value = String(els.audio.volume);
 
@@ -107,8 +110,10 @@ function isLikelyPlayable(file) {
   const extension = lowerName.split(".").pop() || "";
   if (/(^|[.\s_-])(kgm|kgma|vpr)([.\s_-]|$)/i.test(lowerName)) return false;
   if (["kgm", "kgma", "vpr"].includes(extension)) return false;
-  if (file.type && els.audio.canPlayType(file.type)) return true;
-  return ["mp3", "flac", "wav", "m4a", "aac", "ogg", "oga", "opus", "webm"].includes(extension);
+  const knownStandardAudio = ["mp3", "flac", "wav", "m4a", "aac", "ogg", "oga", "opus", "webm"];
+  if (!knownStandardAudio.includes(extension)) return false;
+  if (!file.type) return true;
+  return Boolean(els.audio.canPlayType(file.type)) || knownStandardAudio.includes(extension);
 }
 
 function getUrl(track) {
@@ -312,7 +317,11 @@ function playTrack(id) {
   state.currentId = id;
   if (!state.queue.includes(id)) state.queue.push(id);
   els.audio.src = getUrl(track);
-  setupVisualizer();
+  try {
+    setupVisualizer();
+  } catch (error) {
+    console.warn("Visualizer setup failed, audio playback will continue.", error);
+  }
   els.audio.play().catch(() => {
     showPlayerMessage("浏览器拒绝或无法解码这个音频文件。请换成标准音频格式后再试。");
   });
@@ -320,8 +329,10 @@ function playTrack(id) {
 }
 
 function togglePlay() {
-  if (!state.currentId && state.tracks[0]) {
-    playTrack(state.tracks[0].id);
+  if (!state.currentId) {
+    const firstPlayable = state.tracks.find((track) => track.playable) || state.openResults.find((track) => track.playable);
+    if (firstPlayable) playTrack(firstPlayable.id);
+    else showPlayerMessage("请先导入 mp3、flac、wav、m4a、ogg 等标准音频。");
     return;
   }
   if (els.audio.paused) {
@@ -362,6 +373,7 @@ function updateNowPlaying() {
   els.repeatBtn.classList.toggle("repeat-on", state.repeat !== "off");
   els.repeatBtn.textContent = state.repeat === "one" ? "①" : "↻";
   els.focusModeBtn.classList.toggle("repeat-on", document.body.classList.contains("stage-mode"));
+  els.themeToggleBtn.textContent = state.theme === "dark" ? "☾" : "☼";
 }
 
 function setupVisualizer() {
@@ -550,11 +562,15 @@ document.querySelectorAll("[data-jump-view]").forEach((button) => {
 
 els.fileInput.addEventListener("change", () => {
   const files = Array.from(els.fileInput.files || []);
-  const audioFiles = files.filter((file) => file.type.startsWith("audio/"));
-  state.tracks.push(...audioFiles.map(makeTrack));
+  const importedTracks = files.map(makeTrack);
+  state.tracks.push(...importedTracks);
   state.queue = state.queue.filter((id) => findTrack(id));
   render();
-  if (!state.currentId && state.tracks[0]) playTrack(state.tracks[0].id);
+  const firstPlayable = importedTracks.find((track) => track.playable);
+  if (!state.currentId && firstPlayable) playTrack(firstPlayable.id);
+  if (files.length && !firstPlayable) {
+    showPlayerMessage("没有可播放的标准音频。请导入 mp3、flac、wav、m4a、ogg 等格式。");
+  }
   els.fileInput.value = "";
 });
 
@@ -667,6 +683,13 @@ els.shuffleBtn.addEventListener("click", () => {
 
 els.focusModeBtn.addEventListener("click", () => {
   document.body.classList.toggle("stage-mode");
+  updateNowPlaying();
+});
+
+els.themeToggleBtn.addEventListener("click", () => {
+  state.theme = state.theme === "dark" ? "light" : "dark";
+  document.body.dataset.theme = state.theme;
+  localStorage.setItem("lumaCrate.theme", state.theme);
   updateNowPlaying();
 });
 

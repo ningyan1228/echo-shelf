@@ -8,7 +8,7 @@
       content="A private, local-first web music player for files you own or are licensed to use."
     />
     <title>拾音匣</title>
-    <link rel="stylesheet" href="./styles.css?v=apple-light-1" />
+    <link rel="stylesheet" href="./styles.css?v=player-theme-2" />
   </head>
   <body>
     <div class="app-shell">
@@ -22,7 +22,7 @@
         </div>
 
         <label class="import-button" title="导入本地音乐">
-          <input id="fileInput" type="file" accept="audio/*" multiple />
+          <input id="fileInput" type="file" accept=".mp3,.flac,.wav,.m4a,.aac,.ogg,.oga,.opus,.webm,audio/*" multiple />
           <span aria-hidden="true">+</span>
           <span>导入本地音乐</span>
         </label>
@@ -275,12 +275,13 @@
           <button id="shuffleBtn" title="随机播放" aria-label="随机播放">⇄</button>
           <button id="repeatBtn" title="循环模式" aria-label="循环模式">↻</button>
           <button id="focusModeBtn" title="舞台模式" aria-label="舞台模式">□</button>
+          <button id="themeToggleBtn" title="切换深色/白色" aria-label="切换深色/白色">☼</button>
           <input id="volume" title="音量" type="range" min="0" max="1" step="0.01" value="0.85" />
         </div>
       </footer>
     </div>
 
     <audio id="audio"></audio>
-    <script src="./app.js?v=apple-light-1" type="module"></script>
+    <script src="./app.js?v=player-theme-2" type="module"></script>
   </body>
 </html>
