@@ -281,7 +281,7 @@ function playTrack(id) {
   const track = state.tracks.find((item) => item.id === id);
   if (!track) return;
   if (!track.playable) {
-    showPlayerMessage("不支持 .kgm/.kgma/.vpr 等平台缓存格式。请使用你有权使用的 mp3、flac、wav、m4a、ogg 等标准音频。");
+    showPlayerMessage("不支持 .kgm/.kgma/.vpr 等非标准缓存格式。请使用你有权使用的 mp3、flac、wav、m4a、ogg 等标准音频。");
     return;
   }
 

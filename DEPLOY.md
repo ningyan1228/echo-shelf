@@ -23,4 +23,4 @@ GitHub Pages settings:
 5. Choose folder `/root`.
 6. Save.
 
-Do not upload `MoeKoeMusic-main`, `node_modules`, `api`, build output from unrelated projects, or any third-party music platform source code.
+Do not upload unrelated third-party source code, `node_modules`, backend API folders, generated build output from other projects, or private cache/log files.
