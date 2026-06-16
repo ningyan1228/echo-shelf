@@ -4,6 +4,10 @@ const els = {
   searchInput: document.querySelector("#searchInput"),
   trackList: document.querySelector("#trackList"),
   queueList: document.querySelector("#queueList"),
+  openMusicForm: document.querySelector("#openMusicForm"),
+  openMusicQuery: document.querySelector("#openMusicQuery"),
+  openMusicStatus: document.querySelector("#openMusicStatus"),
+  openMusicResults: document.querySelector("#openMusicResults"),
   studioView: document.querySelector("#studioView"),
   visualizer: document.querySelector("#visualizer"),
   visualizerTitle: document.querySelector("#visualizerTitle"),
@@ -39,6 +43,7 @@ const views = {
   library: document.querySelector("#libraryView"),
   queue: document.querySelector("#queueView"),
   studio: document.querySelector("#studioView"),
+  open: document.querySelector("#openView"),
   playlists: document.querySelector("#playlistsView"),
   lyrics: document.querySelector("#lyricsView"),
   about: document.querySelector("#aboutView"),
@@ -60,6 +65,7 @@ const state = {
   analyser: null,
   source: null,
   animationId: null,
+  openResults: [],
 };
 
 document.body.dataset.mood = state.mood;
@@ -106,6 +112,7 @@ function isLikelyPlayable(file) {
 }
 
 function getUrl(track) {
+  if (track.url) return track.url;
   if (!state.objectUrls.has(track.id)) {
     state.objectUrls.set(track.id, URL.createObjectURL(track.file));
   }
@@ -122,6 +129,7 @@ function setView(name) {
     library: "曲库",
     queue: "播放队列",
     studio: "声景",
+    open: "开放音乐",
     playlists: "歌单",
     lyrics: "歌词",
     about: "合规说明",
@@ -154,6 +162,7 @@ function render() {
   renderPlaylists();
   renderLyrics();
   renderStudio();
+  renderOpenMusic();
   updateNowPlaying();
 }
 
@@ -168,7 +177,7 @@ function renderTracks() {
 }
 
 function renderQueue() {
-  const queuedTracks = state.queue.map((id) => state.tracks.find((track) => track.id === id)).filter(Boolean);
+  const queuedTracks = state.queue.map(findTrack).filter(Boolean);
   if (!queuedTracks.length) {
     els.queueList.innerHTML = `<div class="empty-state">播放队列为空。</div>`;
     return;
@@ -180,22 +189,28 @@ function renderQueue() {
 function trackRow(track, index, context) {
   const isPlaying = state.currentId === track.id;
   const statusText = track.playable ? formatSize(track.size) : "不支持";
+  const thirdAction = track.sourceUrl ? "source" : "playlist";
+  const thirdTitle = track.sourceUrl ? "查看来源" : "加入歌单";
   return `
     <article class="track-row ${isPlaying ? "playing" : ""}" data-id="${track.id}" data-context="${context}">
       <div class="track-index">${isPlaying ? "▶" : index + 1}</div>
       <div class="track-main">
         <strong>${escapeHtml(track.title)}</strong>
-        <span>${escapeHtml(track.fileName)}</span>
+        <span>${escapeHtml(track.sourceName || track.fileName)}</span>
       </div>
       <div class="track-meta">${escapeHtml(track.artist)}</div>
-      <div class="track-duration">${track.duration ? formatTime(track.duration) : statusText}</div>
+      <div class="track-duration">${track.licenseLabel || (track.duration ? formatTime(track.duration) : statusText)}</div>
       <div class="row-actions">
         <button class="icon-button" data-action="play" title="播放" aria-label="播放">▶</button>
         <button class="icon-button" data-action="queue" title="加入队列" aria-label="加入队列">+</button>
-        <button class="icon-button" data-action="playlist" title="加入歌单" aria-label="加入歌单">≡</button>
+        <button class="icon-button" data-action="${thirdAction}" title="${thirdTitle}" aria-label="${thirdTitle}">${track.sourceUrl ? "↗" : "≡"}</button>
       </div>
     </article>
   `;
+}
+
+function findTrack(id) {
+  return state.tracks.find((track) => track.id === id) || state.openResults.find((track) => track.id === id);
 }
 
 function renderPlaylists() {
@@ -277,8 +292,17 @@ function renderStudio() {
   drawIdleVisualizer();
 }
 
+function renderOpenMusic() {
+  if (!els.openMusicResults) return;
+  if (!state.openResults.length) {
+    els.openMusicResults.innerHTML = `<div class="empty-state">搜索后会显示开放授权音频。</div>`;
+    return;
+  }
+  els.openMusicResults.innerHTML = state.openResults.map((track, index) => trackRow(track, index, "open")).join("");
+}
+
 function playTrack(id) {
-  const track = state.tracks.find((item) => item.id === id);
+  const track = findTrack(id);
   if (!track) return;
   if (!track.playable) {
     showPlayerMessage("不支持 .kgm/.kgma/.vpr 等非标准缓存格式。请使用你有权使用的 mp3、flac、wav、m4a、ogg 等标准音频。");
@@ -430,6 +454,66 @@ function addToQueue(id) {
   renderQueue();
 }
 
+async function searchOpenMusic(query) {
+  const term = query.trim();
+  const textFilter = term ? ` AND (${term})` : "";
+  const q = `mediatype:audio AND collection:opensource_audio AND licenseurl:*${textFilter}`;
+  const url = new URL("https://archive.org/advancedsearch.php");
+  url.searchParams.set("q", q);
+  ["identifier", "title", "creator", "licenseurl"].forEach((field) => url.searchParams.append("fl[]", field));
+  url.searchParams.set("rows", "40");
+  url.searchParams.set("page", "1");
+  url.searchParams.set("output", "json");
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`搜索失败：${response.status}`);
+  const data = await response.json();
+  const docs = (data?.response?.docs || []).filter(hasSimpleOpenLicense).slice(0, 12);
+  return Promise.all(docs.map(createArchiveTrack));
+}
+
+function hasSimpleOpenLicense(doc) {
+  const raw = Array.isArray(doc.licenseurl) ? doc.licenseurl[0] : doc.licenseurl || "";
+  const license = raw.toLowerCase();
+  return license.includes("creativecommons.org/publicdomain/zero/")
+    || /creativecommons\.org\/licenses\/by\/(?:2\.0|2\.5|3\.0|4\.0)/.test(license);
+}
+
+async function createArchiveTrack(doc) {
+  const identifier = doc.identifier;
+  const metadataUrl = `https://archive.org/metadata/${encodeURIComponent(identifier)}`;
+  const response = await fetch(metadataUrl);
+  if (!response.ok) throw new Error(`读取元数据失败：${identifier}`);
+  const data = await response.json();
+  const files = data?.files || [];
+  const file = files.find((item) => /\.mp3$/i.test(item.name || "") && /mp3|vbr/i.test(item.format || ""))
+    || files.find((item) => /\.(ogg|opus|webm)$/i.test(item.name || ""))
+    || files.find((item) => /\.mp3$/i.test(item.name || ""));
+  if (!file) return null;
+
+  const title = Array.isArray(doc.title) ? doc.title[0] : doc.title || identifier;
+  const creator = Array.isArray(doc.creator) ? doc.creator[0] : doc.creator || "Unknown creator";
+  const licenseUrl = Array.isArray(doc.licenseurl) ? doc.licenseurl[0] : doc.licenseurl || "";
+  const licenseLabel = licenseUrl.includes("publicdomain/zero") ? "CC0" : "CC BY";
+  const encodedName = file.name.split("/").map(encodeURIComponent).join("/");
+
+  return {
+    id: `ia-${identifier}`,
+    title,
+    artist: creator,
+    fileName: file.name,
+    size: Number(file.size || 0),
+    duration: 0,
+    playable: true,
+    remote: true,
+    url: `https://archive.org/download/${encodeURIComponent(identifier)}/${encodedName}`,
+    sourceName: `Internet Archive · ${licenseLabel}`,
+    sourceUrl: `https://archive.org/details/${encodeURIComponent(identifier)}`,
+    licenseUrl,
+    licenseLabel,
+  };
+}
+
 function addToPlaylist(id) {
   if (!state.playlists.length) {
     const name = prompt("输入新歌单名称", "我的歌单");
@@ -460,11 +544,15 @@ document.querySelectorAll(".nav-item").forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.view));
 });
 
+document.querySelectorAll("[data-jump-view]").forEach((button) => {
+  button.addEventListener("click", () => setView(button.dataset.jumpView));
+});
+
 els.fileInput.addEventListener("change", () => {
   const files = Array.from(els.fileInput.files || []);
   const audioFiles = files.filter((file) => file.type.startsWith("audio/"));
   state.tracks.push(...audioFiles.map(makeTrack));
-  state.queue = state.queue.filter((id) => state.tracks.some((track) => track.id === id));
+  state.queue = state.queue.filter((id) => findTrack(id));
   render();
   if (!state.currentId && state.tracks[0]) playTrack(state.tracks[0].id);
   els.fileInput.value = "";
@@ -489,6 +577,30 @@ els.queueList.addEventListener("click", (event) => {
     renderQueue();
   }
   if (action === "playlist") addToPlaylist(row.dataset.id);
+  if (action === "source") window.open(findTrack(row.dataset.id)?.sourceUrl, "_blank", "noopener,noreferrer");
+});
+
+els.openMusicForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  els.openMusicStatus.textContent = "正在搜索开放授权音频...";
+  els.openMusicResults.innerHTML = "";
+  try {
+    const results = (await searchOpenMusic(els.openMusicQuery.value)).filter(Boolean);
+    state.openResults = results;
+    els.openMusicStatus.textContent = results.length ? `找到 ${results.length} 首。播放前请查看来源和授权。` : "没有找到可播放条目，换个关键词试试。";
+    renderOpenMusic();
+  } catch (error) {
+    els.openMusicStatus.textContent = `${error.message || "搜索失败"}。你仍然可以使用本地音乐。`;
+  }
+});
+
+els.openMusicResults.addEventListener("click", (event) => {
+  const row = event.target.closest(".track-row");
+  if (!row) return;
+  const action = event.target.closest("button")?.dataset.action || "play";
+  if (action === "play") playTrack(row.dataset.id);
+  if (action === "queue") addToQueue(row.dataset.id);
+  if (action === "source") window.open(findTrack(row.dataset.id)?.sourceUrl, "_blank", "noopener,noreferrer");
 });
 
 els.playlistForm.addEventListener("submit", (event) => {

@@ -21,19 +21,20 @@
           </div>
         </div>
 
-        <label class="import-button">
+        <label class="import-button" title="导入本地音乐">
           <input id="fileInput" type="file" accept="audio/*" multiple />
           <span aria-hidden="true">+</span>
           <span>导入本地音乐</span>
         </label>
 
         <nav class="nav-list">
-          <button class="nav-item active" data-view="library">曲库</button>
-          <button class="nav-item" data-view="queue">播放队列</button>
-          <button class="nav-item" data-view="studio">声景</button>
-          <button class="nav-item" data-view="playlists">歌单</button>
-          <button class="nav-item" data-view="lyrics">歌词</button>
-          <button class="nav-item" data-view="about">合规说明</button>
+          <button class="nav-item active" data-view="library" data-icon="⌂" title="曲库">曲库</button>
+          <button class="nav-item" data-view="queue" data-icon="◎" title="播放队列">播放队列</button>
+          <button class="nav-item" data-view="studio" data-icon="▥" title="声景">声景</button>
+          <button class="nav-item" data-view="open" data-icon="◇" title="开放音乐">开放音乐</button>
+          <button class="nav-item" data-view="playlists" data-icon="♬" title="歌单">歌单</button>
+          <button class="nav-item" data-view="lyrics" data-icon="≋" title="歌词">歌词</button>
+          <button class="nav-item" data-view="about" data-icon="⚙" title="合规说明">合规说明</button>
         </nav>
 
         <div class="storage-note">
@@ -55,10 +56,61 @@
         </header>
 
         <div class="homepage-disclaimer">
-          仅播放你主动选择的本地音频文件；本站不提供在线曲库、下载、账号登录或受限内容访问功能。
+          仅播放你主动选择的本地音频文件，或授权明确的开放音频；本站不提供下载、账号登录或受限内容访问功能。
         </div>
 
         <section id="libraryView" class="view active-view">
+          <div class="concept-home">
+            <div class="feature-cover">
+              <img src="./assets/default-cover.svg" alt="" />
+              <strong>本地声景精选</strong>
+              <span>导入你的音乐后自动整理</span>
+            </div>
+
+            <div class="recommend-panel">
+              <h2>今日私人声景</h2>
+              <div class="recommend-row">
+                <article class="mini-card warm">
+                  <strong>雨夜胶囊</strong>
+                  <span>35 首</span>
+                  <button type="button">▶</button>
+                </article>
+                <article class="mini-card violet">
+                  <strong>晨间声波</strong>
+                  <span>24 首</span>
+                  <button type="button">▶</button>
+                </article>
+                <article class="mini-card amber">
+                  <strong>低频专注</strong>
+                  <span>18 首</span>
+                  <button type="button">▶</button>
+                </article>
+                <article class="mini-card rose">
+                  <strong>开放音乐</strong>
+                  <span>CC 授权</span>
+                  <button type="button" data-jump-view="open">▶</button>
+                </article>
+              </div>
+            </div>
+
+            <div class="collection-card">
+              <strong>我的收藏</strong>
+              <span>本地保存</span>
+              <button type="button" data-jump-view="playlists">›</button>
+            </div>
+          </div>
+
+          <div class="category-cloud" aria-label="音乐分类">
+            <button type="button">综艺</button>
+            <button type="button">流行</button>
+            <button type="button">清晨</button>
+            <button type="button">夜晚</button>
+            <button type="button">学习</button>
+            <button type="button">通勤</button>
+            <button type="button">民谣</button>
+            <button type="button">浪漫</button>
+          </div>
+
           <div class="section-head">
             <div>
               <h2>本地音乐</h2>
@@ -128,6 +180,24 @@
               </div>
             </div>
           </div>
+        </section>
+
+        <section id="openView" class="view">
+          <div class="section-head">
+            <div>
+              <h2>开放音乐</h2>
+              <p>搜索公开授权音频；使用前请核对每首作品的授权链接。</p>
+            </div>
+            <form id="openMusicForm" class="inline-form">
+              <input id="openMusicQuery" type="text" maxlength="48" placeholder="搜索开放授权音乐" />
+              <button type="submit">搜索</button>
+            </form>
+          </div>
+          <div class="source-note">
+            数据来自 Internet Archive。仅筛选 CC0 / CC BY 方向的音频条目；本站不缓存、不下载、不隐藏来源。
+          </div>
+          <div id="openMusicStatus" class="source-status">输入关键词开始搜索。</div>
+          <div id="openMusicResults" class="track-list"></div>
         </section>
 
         <section id="playlistsView" class="view">
