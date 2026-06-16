@@ -31,7 +31,7 @@
           <button class="nav-item active" data-view="library" data-icon="⌂" title="曲库">曲库</button>
           <button class="nav-item" data-view="queue" data-icon="◎" title="播放队列">播放队列</button>
           <button class="nav-item" data-view="studio" data-icon="▥" title="声景">声景</button>
-          <button class="nav-item" data-view="open" data-icon="◉" title="收音机">收音机</button>
+          <button class="nav-item" data-view="open" data-icon="◉" title="播客电台">播客电台</button>
           <button class="nav-item" data-view="playlists" data-icon="♬" title="歌单">歌单</button>
           <button class="nav-item" data-view="lyrics" data-icon="≋" title="歌词">歌词</button>
           <button class="nav-item" data-view="about" data-icon="⚙" title="合规说明">合规说明</button>
@@ -185,37 +185,57 @@
         <section id="openView" class="view">
           <div class="section-head">
             <div>
-              <h2>收音机</h2>
-              <p>从开放授权音频里生成临时电台；使用前请核对每首作品的授权链接。</p>
+              <h2>播客电台</h2>
+              <p>聚合公开 RSS 播客和公共网络电台；具体节目版权归对应节目方或电台方所有。</p>
             </div>
             <form id="openMusicForm" class="inline-form">
-              <input id="openMusicQuery" type="text" maxlength="48" placeholder="搜索电台关键词" />
-              <button type="submit">调频</button>
+              <input id="openMusicQuery" type="text" maxlength="180" placeholder="搜索播客关键词，或粘贴公开 RSS 链接" />
+              <button type="submit">搜播客</button>
+              <button id="radioSearchBtn" type="button">搜电台</button>
             </form>
           </div>
+
+          <div class="podcast-panel">
+            <div>
+              <span class="radio-kicker">PODCAST RSS</span>
+              <strong>公开播客</strong>
+              <p>可以搜索公开播客目录，也可以粘贴节目方公开提供的 RSS 链接。中文播客平台只要提供公开 RSS，就能通过代理解析单集。</p>
+            </div>
+            <div class="podcast-tags" aria-label="播客分类">
+              <button type="button" data-podcast-query="科技播客">科技</button>
+              <button type="button" data-podcast-query="商业播客">商业</button>
+              <button type="button" data-podcast-query="新闻播客">新闻</button>
+              <button type="button" data-podcast-query="历史播客">历史</button>
+              <button type="button" data-podcast-query="电影播客">电影</button>
+              <button type="button" data-podcast-query="心理播客">心理</button>
+            </div>
+          </div>
+          <div id="podcastResults" class="podcast-results"></div>
 
           <div class="radio-hero">
             <div>
               <span class="radio-kicker">OPEN RADIO</span>
-              <strong id="radioTitle">开放频率</strong>
-              <p>选择一个频道，拾音匣会从公开授权音频中生成一组临时播放列表。</p>
+              <strong id="radioTitle">世界电台</strong>
+              <p>选择一个频道，拾音匣会从公共电台目录中挑选一组可播电台，适合听新闻、谈话、播客和各种音乐。</p>
             </div>
             <button id="radioShuffleBtn" type="button">随机调频</button>
           </div>
 
           <div class="radio-dial" aria-label="电台频道">
-            <button type="button" data-radio-query="piano">钢琴小馆</button>
+            <button type="button" data-radio-query="news">新闻现场</button>
+            <button type="button" data-radio-query="talk">谈话频道</button>
+            <button type="button" data-radio-query="classical">古典时刻</button>
             <button type="button" data-radio-query="jazz">爵士夜航</button>
             <button type="button" data-radio-query="ambient">环境声场</button>
-            <button type="button" data-radio-query="folk">民谣路边</button>
             <button type="button" data-radio-query="electronic">电子波段</button>
-            <button type="button" data-radio-query="field recording">田野录音</button>
+            <button type="button" data-radio-query="world">世界电台</button>
+            <button type="button" data-radio-query="podcast">播客精选</button>
           </div>
 
           <div class="source-note">
-            数据来自 Internet Archive。仅筛选 CC0 / CC BY 方向的音频条目；本站不缓存、不下载、不隐藏来源。
+            播客和电台数据来自公开目录或公开 RSS。本站不缓存、不下载、不转存音频；如某个来源无法播放，请换一个节目源。
           </div>
-          <div id="openMusicStatus" class="source-status">输入关键词开始搜索。</div>
+          <div id="openMusicStatus" class="source-status">搜索播客、粘贴 RSS，或选择频道开始调频。</div>
           <div id="openMusicResults" class="track-list"></div>
         </section>
 
@@ -255,7 +275,7 @@
             <h2>合规边界</h2>
             <p>
               拾音匣是从零编写的原创网页播放器，不使用任何第三方音乐服务的代码、名称、图标、
-              曲库、歌词、视频、账号系统或非公开接口。
+              曲库、歌词、视频、账号系统或受限接口。
             </p>
             <ul>
               <li>仅播放用户主动选择的本地音频文件。</li>
@@ -301,6 +321,7 @@
     </div>
 
     <audio id="audio"></audio>
+    <script src="./config.js"></script>
     <script src="./app.js?v=player-theme-2" type="module"></script>
   </body>
 </html>

@@ -255,6 +255,89 @@ h2 {
   font-weight: 800;
 }
 
+.podcast-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+  gap: 18px;
+  align-items: center;
+  margin: 18px 0;
+  padding: 22px;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+}
+
+.podcast-panel strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 860;
+}
+
+.podcast-panel p {
+  max-width: 680px;
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.podcast-tags,
+.podcast-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.podcast-tags button,
+.podcast-actions button {
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 8px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.podcast-tags button {
+  min-height: 42px;
+  padding: 0 14px;
+  font-weight: 800;
+}
+
+.podcast-actions button {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.podcast-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 14px 0 22px;
+}
+
+.podcast-card {
+  display: grid;
+  gap: 12px;
+  min-height: 164px;
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.podcast-card strong {
+  display: block;
+  font-size: 18px;
+}
+
+.podcast-card span,
+.podcast-card p {
+  color: var(--muted);
+}
+
+.podcast-card p {
+  margin: 0;
+  line-height: 1.55;
+}
+
 .radio-hero strong {
   display: block;
   font-size: 38px;
@@ -853,12 +936,16 @@ body[data-theme="dark"] .search-box,
 body[data-theme="dark"] .feature-cover,
 body[data-theme="dark"] .recommend-panel,
 body[data-theme="dark"] .collection-card,
+body[data-theme="dark"] .podcast-panel,
+body[data-theme="dark"] .podcast-card,
 body[data-theme="dark"] .icon-button,
 body[data-theme="dark"] .ghost-button,
 body[data-theme="dark"] .inline-form button,
 body[data-theme="dark"] .player button,
 body[data-theme="dark"] .mood-button,
-body[data-theme="dark"] .category-cloud button {
+body[data-theme="dark"] .category-cloud button,
+body[data-theme="dark"] .podcast-tags button,
+body[data-theme="dark"] .podcast-actions button {
   border-color: rgba(255, 255, 255, 0.13);
   background: rgba(28, 28, 30, 0.76);
   box-shadow:

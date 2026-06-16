@@ -1,3 +1,20 @@
+const RADIO_PROXY_URL = "";
+const ARCHIVE_SEARCH_URL = "https://archive.org/advancedsearch.php";
+const RADIO_BROWSER_API_URL = "https://de1.api.radio-browser.info/json";
+const OPEN_MUSIC_RESULT_LIMIT = 12;
+const RADIO_STATION_LIMIT = 24;
+
+const radioChannels = {
+  news: { title: "新闻现场", query: "news" },
+  talk: { title: "谈话频道", query: "talk" },
+  classical: { title: "古典时刻", query: "classical" },
+  jazz: { title: "爵士夜航", query: "jazz" },
+  ambient: { title: "环境声场", query: "ambient" },
+  electronic: { title: "电子波段", query: "electronic" },
+  world: { title: "世界电台", query: "world" },
+  podcast: { title: "播客精选", query: "podcast" },
+};
+
 const els = {
   audio: document.querySelector("#audio"),
   fileInput: document.querySelector("#fileInput"),
@@ -8,6 +25,8 @@ const els = {
   openMusicQuery: document.querySelector("#openMusicQuery"),
   openMusicStatus: document.querySelector("#openMusicStatus"),
   openMusicResults: document.querySelector("#openMusicResults"),
+  podcastResults: document.querySelector("#podcastResults"),
+  radioSearchBtn: document.querySelector("#radioSearchBtn"),
   radioTitle: document.querySelector("#radioTitle"),
   radioShuffleBtn: document.querySelector("#radioShuffleBtn"),
   studioView: document.querySelector("#studioView"),
@@ -70,6 +89,7 @@ const state = {
   source: null,
   animationId: null,
   openResults: [],
+  podcastResults: [],
 };
 
 document.body.dataset.mood = state.mood;
@@ -136,7 +156,7 @@ function setView(name) {
     library: "曲库",
     queue: "播放队列",
     studio: "声景",
-    open: "收音机",
+    open: "播客电台",
     playlists: "歌单",
     lyrics: "歌词",
     about: "合规说明",
@@ -169,6 +189,7 @@ function render() {
   renderPlaylists();
   renderLyrics();
   renderStudio();
+  renderPodcastResults();
   renderOpenMusic();
   updateNowPlaying();
 }
@@ -302,10 +323,32 @@ function renderStudio() {
 function renderOpenMusic() {
   if (!els.openMusicResults) return;
   if (!state.openResults.length) {
-    els.openMusicResults.innerHTML = `<div class="empty-state">调频后会显示开放授权音频。</div>`;
+    els.openMusicResults.innerHTML = `<div class="empty-state">搜索公开播客 RSS 或调频网络电台后，这里会显示可播放节目。</div>`;
     return;
   }
   els.openMusicResults.innerHTML = state.openResults.map((track, index) => trackRow(track, index, "open")).join("");
+}
+
+function renderPodcastResults() {
+  if (!els.podcastResults) return;
+  if (!state.podcastResults.length) {
+    els.podcastResults.innerHTML = "";
+    return;
+  }
+
+  els.podcastResults.innerHTML = state.podcastResults.map((podcast) => `
+    <article class="podcast-card" data-feed-url="${escapeHtml(podcast.feedUrl || "")}" data-source-url="${escapeHtml(podcast.sourceUrl || "")}">
+      <div>
+        <strong>${escapeHtml(podcast.title)}</strong>
+        <span>${escapeHtml(podcast.author || "Unknown creator")}</span>
+      </div>
+      <p>${escapeHtml(podcast.description || podcast.genres || "公开 RSS 播客")}</p>
+      <div class="podcast-actions">
+        <button type="button" data-action="episodes">单集</button>
+        <button type="button" data-action="source">来源</button>
+      </div>
+    </article>
+  `).join("");
 }
 
 function playTrack(id) {
@@ -319,15 +362,21 @@ function playTrack(id) {
   state.currentId = id;
   if (!state.queue.includes(id)) state.queue.push(id);
   els.audio.src = getUrl(track);
+  recordRadioClick(track);
   try {
     setupVisualizer();
   } catch (error) {
     console.warn("Visualizer setup failed, audio playback will continue.", error);
   }
   els.audio.play().catch(() => {
-    showPlayerMessage("浏览器拒绝或无法解码这个音频文件。请换成标准音频格式后再试。");
+    showPlayerMessage(track.remote ? "这个电台流暂时无法播放，请换一个电台或频道。" : "浏览器拒绝或无法解码这个音频文件。请换成标准音频格式后再试。");
   });
   render();
+}
+
+function recordRadioClick(track) {
+  if (!track?.radioClickUrl) return;
+  fetch(track.radioClickUrl).catch(() => {});
 }
 
 function togglePlay() {
@@ -468,36 +517,192 @@ function addToQueue(id) {
   renderQueue();
 }
 
+function getRadioProxyUrl() {
+  const configured = window.SHIYIN_RADIO_PROXY_URL || RADIO_PROXY_URL;
+  return String(configured || "").trim().replace(/\/+$/, "");
+}
+
+async function fetchJson(url) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+    return await response.json();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+function normalizeOpenTrack(track) {
+  if (!track?.url) return null;
+  return {
+    id: track.id || `open-${makeId()}`,
+    title: track.title || track.fileName || "Untitled",
+    artist: track.artist || "Unknown creator",
+    fileName: track.fileName || track.title || "Open audio",
+    size: Number(track.size || 0),
+    duration: Number(track.duration || 0),
+    playable: true,
+    remote: true,
+    url: track.url,
+    sourceName: track.sourceName || "Open audio",
+    sourceUrl: track.sourceUrl || "",
+    licenseUrl: track.licenseUrl || "",
+    licenseLabel: track.licenseLabel || "Open license",
+  };
+}
+
+async function searchPodcasts(query) {
+  const term = query.trim();
+  const proxyUrl = getRadioProxyUrl();
+  if (!proxyUrl) throw new Error("播客搜索需要先配置 Deno 代理");
+  const url = new URL(`${proxyUrl}/podcast/search`);
+  url.searchParams.set("q", term || "科技播客");
+  const data = await fetchJson(url);
+  return Array.isArray(data?.podcasts) ? data.podcasts : [];
+}
+
+async function loadPodcastFeed(feedUrl) {
+  const url = String(feedUrl || "").trim();
+  if (!/^https?:\/\//i.test(url)) {
+    throw new Error("请输入公开可访问的 RSS 链接");
+  }
+
+  els.openMusicQuery.value = url;
+  els.openMusicStatus.textContent = "正在读取播客 RSS...";
+  state.openResults = [];
+  renderOpenMusic();
+  const results = (await searchOpenMusic(url)).filter(Boolean);
+  state.openResults = results;
+  els.openMusicStatus.textContent = results.length ? `读取到 ${results.length} 个播客单集。` : "这个 RSS 暂时没有可播放单集。";
+  renderOpenMusic();
+}
+
 async function searchOpenMusic(query) {
   const term = query.trim();
+  const proxyUrl = getRadioProxyUrl();
+  if (/^https?:\/\//i.test(term)) {
+    if (!proxyUrl) {
+      throw new Error("播客 RSS 需要先配置 Deno 代理，避免浏览器跨域限制");
+    }
+    const url = new URL(`${proxyUrl}/podcast/feed`);
+    url.searchParams.set("url", term);
+    const data = await fetchJson(url);
+    const tracks = Array.isArray(data?.tracks) ? data.tracks : [];
+    return tracks.map(normalizeOpenTrack).filter(Boolean).slice(0, OPEN_MUSIC_RESULT_LIMIT);
+  }
+
+  if (proxyUrl) {
+    try {
+      const url = new URL(`${proxyUrl}/radio/search`);
+      url.searchParams.set("q", getRadioQuery(term));
+      const data = await fetchJson(url);
+      const tracks = Array.isArray(data?.tracks) ? data.tracks : [];
+      return tracks.map(normalizeOpenTrack).filter(Boolean).slice(0, OPEN_MUSIC_RESULT_LIMIT);
+    } catch (error) {
+      console.warn("Radio proxy failed, falling back to direct public radio search.", error);
+    }
+  }
+
+  const stations = await searchRadioStations(getRadioQuery(term));
+  if (stations.length) return stations;
+
+  return searchArchiveDirect(term);
+}
+
+function getRadioQuery(query) {
+  const key = query.trim();
+  return radioChannels[key]?.query || key || "world";
+}
+
+async function searchRadioStations(query) {
+  const tagged = await radioBrowserSearch({ tag: query });
+  const named = tagged.length >= 4 ? [] : await radioBrowserSearch({ name: query });
+  const seen = new Set();
+  return [...tagged, ...named]
+    .map(createRadioTrack)
+    .filter((track) => {
+      if (!track || seen.has(track.id)) return false;
+      seen.add(track.id);
+      return true;
+    })
+    .slice(0, OPEN_MUSIC_RESULT_LIMIT);
+}
+
+async function radioBrowserSearch(params) {
+  const url = new URL(`${RADIO_BROWSER_API_URL}/stations/search`);
+  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+  url.searchParams.set("hidebroken", "true");
+  url.searchParams.set("limit", String(RADIO_STATION_LIMIT));
+  url.searchParams.set("order", "clickcount");
+  url.searchParams.set("reverse", "true");
+
+  const stations = await fetchJson(url);
+  return Array.isArray(stations) ? stations : [];
+}
+
+function createRadioTrack(station) {
+  const streamUrl = station.url_resolved || station.url;
+  const codec = String(station.codec || "").toLowerCase();
+  if (!isPlayableRadioStream(streamUrl, codec)) return null;
+
+  const country = [station.countrycode, station.language].filter(Boolean).join(" · ");
+  const bitrate = Number(station.bitrate || 0);
+  const meta = [codec.toUpperCase(), bitrate ? `${bitrate}kbps` : "", country].filter(Boolean).join(" · ");
+
+  return {
+    id: `radio-${station.stationuuid || makeId()}`,
+    title: station.name || "Untitled station",
+    artist: station.tags || "Public radio",
+    fileName: streamUrl,
+    size: 0,
+    duration: 0,
+    playable: true,
+    remote: true,
+    url: streamUrl,
+    sourceName: meta || "Public radio",
+    sourceUrl: station.homepage || streamUrl,
+    licenseUrl: station.homepage || "",
+    licenseLabel: "LIVE",
+    radioClickUrl: station.stationuuid ? `${RADIO_BROWSER_API_URL}/url/${station.stationuuid}` : "",
+  };
+}
+
+function isPlayableRadioStream(url, codec) {
+  if (!/^https?:\/\//i.test(String(url || ""))) return false;
+  if (/\.(m3u|pls|asx)(?:$|\?)/i.test(url)) return false;
+  if (/mpeg|mp3|aac|aacp|ogg|opus/.test(codec)) return true;
+  return /\.(mp3|aac|ogg|oga|opus)(?:$|\?)/i.test(url);
+}
+
+async function searchArchiveDirect(term) {
   const textFilter = term ? ` AND (${term})` : "";
   const q = `mediatype:audio AND collection:opensource_audio AND licenseurl:*${textFilter}`;
-  const url = new URL("https://archive.org/advancedsearch.php");
+  const url = new URL(ARCHIVE_SEARCH_URL);
   url.searchParams.set("q", q);
   ["identifier", "title", "creator", "licenseurl"].forEach((field) => url.searchParams.append("fl[]", field));
   url.searchParams.set("rows", "40");
   url.searchParams.set("page", "1");
   url.searchParams.set("output", "json");
 
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`搜索失败：${response.status}`);
-  const data = await response.json();
-  const docs = (data?.response?.docs || []).filter(hasSimpleOpenLicense).slice(0, 12);
+  const data = await fetchJson(url);
+  const docs = (data?.response?.docs || []).filter(hasSimpleOpenLicense).slice(0, OPEN_MUSIC_RESULT_LIMIT);
   return Promise.all(docs.map(createArchiveTrack));
 }
 
 async function tuneRadio(query, label = "") {
   els.openMusicQuery.value = query;
-  els.radioTitle.textContent = label || `“${query}” 频道`;
+  els.radioTitle.textContent = label || radioChannels[query]?.title || `“${query}” 频道`;
   document.querySelectorAll("[data-radio-query]").forEach((button) => {
     button.classList.toggle("active", button.dataset.radioQuery === query);
   });
-  els.openMusicStatus.textContent = "正在调频开放授权音频...";
+  els.openMusicStatus.textContent = /^https?:\/\//i.test(query) ? "正在读取播客 RSS..." : "正在调频公共电台...";
   els.openMusicResults.innerHTML = "";
   try {
     const results = (await searchOpenMusic(query)).filter(Boolean);
     state.openResults = results;
-    els.openMusicStatus.textContent = results.length ? `调到 ${results.length} 首。播放前请查看来源和授权。` : "这个频道暂时没有可播放条目，换个频道试试。";
+    els.openMusicStatus.textContent = results.length ? `调到 ${results.length} 个可尝试播放的节目源。若某个无法播放，请换一个。` : "这个频道暂时没有可播放节目源，换个频道或关键词试试。";
     renderOpenMusic();
   } catch (error) {
     els.openMusicStatus.textContent = `${error.message || "调频失败"}。你仍然可以使用本地音乐。`;
@@ -618,7 +823,36 @@ els.queueList.addEventListener("click", (event) => {
 
 els.openMusicForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  tuneRadio(els.openMusicQuery.value.trim() || "piano");
+  const query = els.openMusicQuery.value.trim();
+  if (!query) return;
+  state.podcastResults = [];
+  renderPodcastResults();
+  try {
+    if (/^https?:\/\//i.test(query)) {
+      await loadPodcastFeed(query);
+      return;
+    }
+    els.openMusicStatus.textContent = "正在搜索公开播客目录...";
+    const podcasts = await searchPodcasts(query);
+    state.podcastResults = podcasts;
+    state.openResults = [];
+    els.openMusicStatus.textContent = podcasts.length ? `找到 ${podcasts.length} 个播客。点击“单集”读取 RSS。` : "没有找到相关播客，换个关键词试试。";
+    renderPodcastResults();
+    renderOpenMusic();
+  } catch (error) {
+    els.openMusicStatus.textContent = `${error.message || "播客搜索失败"}。你也可以切换到电台搜索。`;
+  }
+});
+
+els.radioSearchBtn.addEventListener("click", () => {
+  tuneRadio(els.openMusicQuery.value.trim() || "world");
+});
+
+document.querySelectorAll("[data-podcast-query]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    els.openMusicQuery.value = button.dataset.podcastQuery;
+    els.openMusicForm.requestSubmit();
+  });
 });
 
 document.querySelectorAll("[data-radio-query]").forEach((button) => {
@@ -629,6 +863,22 @@ els.radioShuffleBtn.addEventListener("click", () => {
   const channels = Array.from(document.querySelectorAll("[data-radio-query]"));
   const channel = channels[Math.floor(Math.random() * channels.length)];
   if (channel) tuneRadio(channel.dataset.radioQuery, channel.textContent.trim());
+});
+
+els.podcastResults.addEventListener("click", async (event) => {
+  const card = event.target.closest(".podcast-card");
+  if (!card) return;
+  const action = event.target.closest("button")?.dataset.action || "episodes";
+  if (action === "source") {
+    const sourceUrl = card.dataset.sourceUrl;
+    if (sourceUrl) window.open(sourceUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
+  try {
+    await loadPodcastFeed(card.dataset.feedUrl);
+  } catch (error) {
+    els.openMusicStatus.textContent = `${error.message || "读取 RSS 失败"}。`;
+  }
 });
 
 els.openMusicResults.addEventListener("click", (event) => {
@@ -766,6 +1016,11 @@ els.audio.addEventListener("loadedmetadata", () => {
 
 els.audio.addEventListener("error", () => {
   const error = els.audio.error;
+  const track = findTrack(state.currentId);
+  if (track?.remote) {
+    showPlayerMessage("这个在线节目源当前不可用或被浏览器拦截，请换一个电台。");
+    return;
+  }
   const reason = error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
     ? "浏览器不支持这个音频格式。"
     : "音频加载失败。";

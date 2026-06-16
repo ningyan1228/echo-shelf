@@ -10,8 +10,8 @@
 - Keeps playlists and lyrics in browser local storage.
 - Provides an original soundscape workspace with audio visualization, mood themes, listening stats, and a random local mix builder.
 - Includes a stage mode for a focused now-playing experience.
-- Includes an optional radio-style open-audio view backed by Internet Archive, filtered toward CC0 / CC BY audio entries.
-- Does not upload, proxy, cache, scrape, download, or distribute music files.
+- Includes an optional podcast and radio view backed by public RSS feeds and public radio directories.
+- Does not upload, cache, scrape private services, download, or distribute music files.
 - Does not use any third-party music service API, code, name, icon, playlist, lyrics, video, account system, or private endpoint.
 
 ## Compliance Boundary
@@ -27,6 +27,20 @@ Do not deploy or modify it to:
 - Advertise the site as a replacement client for any official music platform.
 
 For open-music results, always show source and license links. Do not remove attribution requirements from CC BY works.
+
+## Podcast And Radio Proxy
+
+The static site can run without a backend, but podcast search and RSS parsing need a small proxy because many RSS feeds block browser CORS requests.
+
+1. Deploy `deno-proxy/main.ts` to Deno Deploy.
+2. Copy the deployed URL.
+3. Put it in `config.js`:
+
+```js
+window.SHIYIN_RADIO_PROXY_URL = "https://your-deno-project.deno.dev";
+```
+
+The proxy only returns public RSS episode audio links and public radio stream links. It does not store audio files or use private platform APIs.
 
 No software project can guarantee absolute legal safety in every jurisdiction. For a public service, consult a qualified lawyer before adding online music sources or user-upload hosting.
 

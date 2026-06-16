@@ -5,6 +5,7 @@ Upload the contents of this folder to the root of a new GitHub repository.
 Required files:
 
 - `index.html`
+- `config.js`
 - `styles.css`
 - `app.js`
 - `README.md`
@@ -13,6 +14,12 @@ Required files:
 - `.nojekyll`
 - `assets/default-cover.svg`
 - `assets/preview.png`
+
+Optional Deno proxy:
+
+- Deploy `deno-proxy/main.ts` to Deno Deploy.
+- Set the deployed URL in `config.js`.
+- Keep the proxy limited to public RSS feeds and public radio directories.
 
 GitHub Pages settings:
 
