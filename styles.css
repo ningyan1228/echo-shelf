@@ -1089,28 +1089,22 @@ body.stage-mode .player {
 body {
   min-width: 1180px;
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 44px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0 12px, transparent 12px 24px) 0 0 / 84px 84px,
-    radial-gradient(circle at 18% 16%, rgba(87, 218, 136, 0.3), transparent 26%),
-    linear-gradient(145deg, #1f7f35, #08672b 58%, #04541f);
+  display: block;
+  padding: 0;
+  background: #f5f5f7;
 }
 
 .app-shell {
   position: relative;
   grid-template-columns: 96px minmax(0, 1fr);
-  width: min(1200px, calc(100vw - 88px));
-  height: min(780px, calc(100vh - 88px));
+  width: 100vw;
+  height: 100vh;
   min-height: 720px;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.42);
-  border-radius: 8px;
+  border: 0;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.94);
-  box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.36),
-    0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+  box-shadow: none;
 }
 
 .sidebar {
@@ -1424,7 +1418,6 @@ h1 {
     width: 100%;
     height: auto;
     min-height: 100vh;
-    border-radius: 0;
   }
 
   .sidebar {
