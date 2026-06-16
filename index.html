@@ -7,7 +7,7 @@
       name="description"
       content="A private, local-first web music player for files you own or are licensed to use."
     />
-    <title>Echo Shelf</title>
+    <title>拾音匣</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -16,8 +16,8 @@
         <div class="brand">
           <img src="./assets/default-cover.svg" alt="" class="brand-mark" />
           <div>
-            <strong>Echo Shelf</strong>
-            <span>Local music player</span>
+            <strong>拾音匣</strong>
+            <span>Local-first player</span>
           </div>
         </div>
 
@@ -53,6 +53,10 @@
             <input id="searchInput" type="search" placeholder="搜索本地歌曲、歌手、文件名" />
           </div>
         </header>
+
+        <div class="homepage-disclaimer">
+          仅播放你主动选择的本地音频文件；本站不提供在线曲库、下载、平台账号登录或会员绕过功能。
+        </div>
 
         <section id="libraryView" class="view active-view">
           <div class="section-head">
@@ -161,7 +165,7 @@
           <div class="about-panel">
             <h2>合规边界</h2>
             <p>
-              Echo Shelf 是从零编写的原创网页播放器，不使用酷狗、MoeKoeMusic 或其他音乐平台的代码、
+              拾音匣是从零编写的原创网页播放器，不使用酷狗、MoeKoeMusic 或其他音乐平台的代码、
               名称、图标、曲库、歌词、MV、账号系统或非公开接口。
             </p>
             <ul>
@@ -189,6 +193,7 @@
             <button id="playBtn" class="primary-control" title="播放/暂停" aria-label="播放/暂停">▶</button>
             <button id="nextBtn" title="下一首" aria-label="下一首">›</button>
           </div>
+          <div id="playerMessage" class="player-message" role="status" aria-live="polite"></div>
           <div class="progress-row">
             <span id="currentTime">0:00</span>
             <input id="progress" type="range" min="0" max="1000" value="0" />

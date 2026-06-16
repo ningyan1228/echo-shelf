@@ -22,6 +22,7 @@ const els = {
   nowTitle: document.querySelector("#nowTitle"),
   nowArtist: document.querySelector("#nowArtist"),
   playBtn: document.querySelector("#playBtn"),
+  playerMessage: document.querySelector("#playerMessage"),
   prevBtn: document.querySelector("#prevBtn"),
   nextBtn: document.querySelector("#nextBtn"),
   shuffleBtn: document.querySelector("#shuffleBtn"),
@@ -46,14 +47,14 @@ const views = {
 const state = {
   tracks: [],
   queue: [],
-  playlists: loadJson("echoShelf.playlists", []),
-  lyrics: loadJson("echoShelf.lyrics", {}),
+  playlists: loadJson("lumaCrate.playlists", []),
+  lyrics: loadJson("lumaCrate.lyrics", {}),
   currentId: null,
   objectUrls: new Map(),
   shuffle: false,
   repeat: "off",
   activeView: "library",
-  mood: localStorage.getItem("echoShelf.mood") || "default",
+  mood: localStorage.getItem("lumaCrate.mood") || "default",
   visualizerReady: false,
   audioContext: null,
   analyser: null,
@@ -62,7 +63,7 @@ const state = {
 };
 
 document.body.dataset.mood = state.mood;
-els.audio.volume = Number(localStorage.getItem("echoShelf.volume") || "0.85");
+els.audio.volume = Number(localStorage.getItem("lumaCrate.volume") || "0.85");
 els.volume.value = String(els.audio.volume);
 
 function loadJson(key, fallback) {
@@ -91,7 +92,17 @@ function makeTrack(file) {
     size: file.size,
     file,
     duration: 0,
+    playable: isLikelyPlayable(file),
   };
+}
+
+function isLikelyPlayable(file) {
+  const lowerName = file.name.toLowerCase();
+  const extension = lowerName.split(".").pop() || "";
+  if (/(^|[.\s_-])(kgm|kgma|vpr)([.\s_-]|$)/i.test(lowerName)) return false;
+  if (["kgm", "kgma", "vpr"].includes(extension)) return false;
+  if (file.type && els.audio.canPlayType(file.type)) return true;
+  return ["mp3", "flac", "wav", "m4a", "aac", "ogg", "oga", "opus", "webm"].includes(extension);
 }
 
 function getUrl(track) {
@@ -168,6 +179,7 @@ function renderQueue() {
 
 function trackRow(track, index, context) {
   const isPlaying = state.currentId === track.id;
+  const statusText = track.playable ? formatSize(track.size) : "不支持";
   return `
     <article class="track-row ${isPlaying ? "playing" : ""}" data-id="${track.id}" data-context="${context}">
       <div class="track-index">${isPlaying ? "▶" : index + 1}</div>
@@ -176,7 +188,7 @@ function trackRow(track, index, context) {
         <span>${escapeHtml(track.fileName)}</span>
       </div>
       <div class="track-meta">${escapeHtml(track.artist)}</div>
-      <div class="track-duration">${track.duration ? formatTime(track.duration) : formatSize(track.size)}</div>
+      <div class="track-duration">${track.duration ? formatTime(track.duration) : statusText}</div>
       <div class="row-actions">
         <button class="icon-button" data-action="play" title="播放" aria-label="播放">▶</button>
         <button class="icon-button" data-action="queue" title="加入队列" aria-label="加入队列">+</button>
@@ -268,12 +280,18 @@ function renderStudio() {
 function playTrack(id) {
   const track = state.tracks.find((item) => item.id === id);
   if (!track) return;
+  if (!track.playable) {
+    showPlayerMessage("不支持 .kgm/.kgma/.vpr 等平台缓存格式。请使用你有权使用的 mp3、flac、wav、m4a、ogg 等标准音频。");
+    return;
+  }
 
   state.currentId = id;
   if (!state.queue.includes(id)) state.queue.push(id);
   els.audio.src = getUrl(track);
   setupVisualizer();
-  els.audio.play().catch(() => {});
+  els.audio.play().catch(() => {
+    showPlayerMessage("浏览器拒绝或无法解码这个音频文件。请换成标准音频格式后再试。");
+  });
   render();
 }
 
@@ -283,10 +301,20 @@ function togglePlay() {
     return;
   }
   if (els.audio.paused) {
-    els.audio.play().catch(() => {});
+    els.audio.play().catch(() => {
+      showPlayerMessage("当前音频无法播放。请确认文件格式是浏览器支持的标准音频。");
+    });
   } else {
     els.audio.pause();
   }
+}
+
+function showPlayerMessage(message) {
+  els.playerMessage.textContent = message;
+  window.clearTimeout(showPlayerMessage.timer);
+  showPlayerMessage.timer = window.setTimeout(() => {
+    els.playerMessage.textContent = "";
+  }, 6000);
 }
 
 function move(delta) {
@@ -415,7 +443,7 @@ function addToPlaylist(id) {
   const playlist = state.playlists[index];
   if (!playlist) return;
   if (!playlist.trackIds.includes(id)) playlist.trackIds.push(id);
-  saveJson("echoShelf.playlists", state.playlists);
+  saveJson("lumaCrate.playlists", state.playlists);
   renderPlaylists();
 }
 
@@ -469,7 +497,7 @@ els.playlistForm.addEventListener("submit", (event) => {
   if (!name) return;
   state.playlists.push({ id: makeId(), name, trackIds: [] });
   els.playlistName.value = "";
-  saveJson("echoShelf.playlists", state.playlists);
+  saveJson("lumaCrate.playlists", state.playlists);
   renderPlaylists();
 });
 
@@ -486,7 +514,7 @@ els.playlistGrid.addEventListener("click", (event) => {
   }
   if (action === "delete-playlist" && confirm(`删除歌单“${playlist.name}”？`)) {
     state.playlists = state.playlists.filter((item) => item.id !== playlist.id);
-    saveJson("echoShelf.playlists", state.playlists);
+    saveJson("lumaCrate.playlists", state.playlists);
     renderPlaylists();
   }
 });
@@ -494,7 +522,7 @@ els.playlistGrid.addEventListener("click", (event) => {
 els.saveLyricsBtn.addEventListener("click", () => {
   if (!state.currentId) return;
   state.lyrics[state.currentId] = els.lyricsInput.value;
-  saveJson("echoShelf.lyrics", state.lyrics);
+  saveJson("lumaCrate.lyrics", state.lyrics);
   renderLyrics();
 });
 
@@ -534,7 +562,7 @@ document.querySelectorAll(".mood-button").forEach((button) => {
   button.addEventListener("click", () => {
     state.mood = button.dataset.mood;
     document.body.dataset.mood = state.mood;
-    localStorage.setItem("echoShelf.mood", state.mood);
+    localStorage.setItem("lumaCrate.mood", state.mood);
     renderStudio();
   });
 });
@@ -558,7 +586,7 @@ els.repeatBtn.addEventListener("click", () => {
 
 els.volume.addEventListener("input", () => {
   els.audio.volume = Number(els.volume.value);
-  localStorage.setItem("echoShelf.volume", String(els.audio.volume));
+  localStorage.setItem("lumaCrate.volume", String(els.audio.volume));
 });
 
 els.progress.addEventListener("input", () => {
@@ -578,6 +606,14 @@ els.audio.addEventListener("loadedmetadata", () => {
   els.duration.textContent = formatTime(els.audio.duration);
   renderTracks();
   renderQueue();
+});
+
+els.audio.addEventListener("error", () => {
+  const error = els.audio.error;
+  const reason = error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
+    ? "浏览器不支持这个音频格式。"
+    : "音频加载失败。";
+  showPlayerMessage(`${reason} 请使用 mp3、flac、wav、m4a、ogg 等标准格式。`);
 });
 
 els.audio.addEventListener("timeupdate", () => {

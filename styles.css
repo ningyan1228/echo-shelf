@@ -200,6 +200,17 @@ h2 {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.homepage-disclaimer {
+  margin-top: 20px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
+  border-radius: 8px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .search-box input,
 .inline-form input,
 .lyrics-panel textarea {
@@ -599,6 +610,13 @@ body.stage-mode .now-playing strong {
   gap: 10px;
 }
 
+.player-message {
+  min-height: 18px;
+  color: var(--danger);
+  font-size: 12px;
+  text-align: center;
+}
+
 .transport-buttons,
 .player-tools,
 .progress-row {
@@ -658,6 +676,8 @@ input[type="range"] {
     z-index: 2;
     display: grid;
     grid-template-columns: 1fr auto;
+    gap: 14px;
+    padding: 16px;
   }
 
   .nav-list {
@@ -701,5 +721,111 @@ input[type="range"] {
     grid-template-columns: 1fr;
     gap: 10px;
     padding: 12px 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .brand {
+    min-width: 0;
+  }
+
+  .brand strong {
+    font-size: 17px;
+  }
+
+  .import-button {
+    width: 100%;
+  }
+
+  .nav-list {
+    grid-column: auto;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+    min-width: 76px;
+    text-align: center;
+  }
+
+  .topbar {
+    gap: 14px;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  .workspace {
+    padding: 20px 14px 228px;
+  }
+
+  .section-head {
+    gap: 12px;
+  }
+
+  .track-row {
+    grid-template-columns: 34px minmax(0, 1fr) 100px;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .row-actions {
+    gap: 6px;
+  }
+
+  .icon-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .visualizer-card {
+    min-height: 300px;
+  }
+
+  #visualizer {
+    height: 230px;
+  }
+
+  .visualizer-caption,
+  .player-tools {
+    flex-wrap: wrap;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lyrics-panel textarea,
+  .lyrics-display {
+    min-height: 260px;
+  }
+
+  .player {
+    min-height: 200px;
+  }
+
+  .now-playing {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .progress-row {
+    gap: 6px;
+  }
+
+  #progress {
+    width: min(100%, 260px);
   }
 }

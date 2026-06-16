@@ -1,6 +1,8 @@
-# Echo Shelf
+# 拾音匣
 
-Echo Shelf is an original, local-first web music player designed for public deployment without relying on third-party music platforms.
+拾音匣 is an original, local-first web music player designed for public deployment without relying on third-party music platforms.
+
+![拾音匣 preview](assets/preview.png)
 
 ## What It Does
 
@@ -41,7 +43,7 @@ The first screen is the player itself. No build step is required.
 
 Use wording like this on the published site:
 
-> Echo Shelf is an independent local music player. It is not affiliated with any music platform. Users are responsible for selecting only audio and lyric files they own or are authorized to use. This site does not provide online songs, downloads, account login, VIP bypass, or third-party music platform access.
+> 拾音匣 is an independent local music player. It is not affiliated with any music platform. Users are responsible for selecting only audio and lyric files they own or are authorized to use. This site does not provide online songs, downloads, account login, VIP bypass, or third-party music platform access.
 
 ## License
 
