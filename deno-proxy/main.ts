@@ -76,9 +76,13 @@ Deno.serve(async (request) => {
 });
 
 async function searchRadio(query) {
-  const tagged = await radioSearch({ tag: query });
-  const named = tagged.length >= 4 ? [] : await radioSearch({ name: query });
-  const stations = [...tagged, ...named];
+  const term = toDomesticRadioQuery(query);
+  const domesticTagged = await radioSearch({ countrycode: "CN", tag: term });
+  const domesticNamed = await radioSearch({ countrycode: "CN", name: term });
+  const chineseTagged = await radioSearch({ language: "chinese", tag: term });
+  const chineseNamed = await radioSearch({ language: "chinese", name: term });
+  const domesticFallback = domesticTagged.length + domesticNamed.length >= 4 ? [] : await radioSearch({ countrycode: "CN" });
+  const stations = [...domesticTagged, ...domesticNamed, ...chineseTagged, ...chineseNamed, ...domesticFallback];
   const seen = new Set();
 
   return stations
@@ -89,6 +93,25 @@ async function searchRadio(query) {
       return true;
     })
     .slice(0, RESULT_LIMIT);
+}
+
+function toDomesticRadioQuery(query) {
+  const map = {
+    news: "新闻",
+    talk: "谈话",
+    finance: "财经",
+    traffic: "交通",
+    music: "音乐",
+    literature: "读书",
+    local: "广播",
+    podcast: "播客",
+    world: "中文",
+    ambient: "音乐",
+    jazz: "音乐",
+    classical: "音乐",
+    electronic: "音乐",
+  };
+  return map[query] || query || "中文";
 }
 
 async function radioSearch(params) {

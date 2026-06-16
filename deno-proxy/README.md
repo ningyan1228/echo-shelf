@@ -1,6 +1,6 @@
 # Shiyin Box Deno Proxy
 
-This proxy is optional. It helps the static GitHub Pages site search public podcasts, read public RSS feeds, and search public radio directories.
+This proxy is optional. It helps the static GitHub Pages site search China-region public podcasts, read public RSS feeds, and search Chinese/domestic public radio directories.
 
 ## Endpoints
 
@@ -22,6 +22,6 @@ This proxy is optional. It helps the static GitHub Pages site search public podc
 window.SHIYIN_RADIO_PROXY_URL = "https://your-deno-project.deno.dev";
 ```
 
-The proxy should stay limited to public RSS feeds and public radio directories. It does not store audio files.
+The proxy should stay limited to public RSS feeds and public radio directories. It prioritizes Chinese/domestic results where available and does not store audio files.
 
 The AI endpoints return a clear "not configured" response by default. Add your own model provider on the proxy side if you want to enable summaries or transcripts. Never put API keys in the public frontend.

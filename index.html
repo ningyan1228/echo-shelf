@@ -187,12 +187,12 @@
           <div class="section-head">
             <div>
               <h2>播客电台</h2>
-              <p>聚合公开 RSS 播客和公共网络电台；具体节目版权归对应节目方或电台方所有。</p>
+              <p>聚合中国区公开 RSS 播客和中文公共网络电台；具体节目版权归对应节目方或电台方所有。</p>
             </div>
             <form id="openMusicForm" class="inline-form">
-              <input id="openMusicQuery" type="text" maxlength="180" placeholder="搜索播客关键词，或粘贴公开 RSS 链接" />
-              <button type="submit">搜播客</button>
-              <button id="radioSearchBtn" type="button">搜电台</button>
+              <input id="openMusicQuery" type="text" maxlength="180" placeholder="搜索中文播客、电台关键词，或粘贴公开 RSS 链接" />
+              <button type="submit">搜国内播客</button>
+              <button id="radioSearchBtn" type="button">搜国内电台</button>
             </form>
           </div>
 
@@ -200,7 +200,7 @@
             <div>
               <span class="radio-kicker">PODCAST RSS</span>
               <strong>公开播客</strong>
-              <p>可以搜索公开播客目录，也可以粘贴节目方公开提供的 RSS 链接。中文播客平台只要提供公开 RSS，就能通过代理解析单集。</p>
+              <p>可以搜索中国区公开播客目录，也可以粘贴节目方公开提供的 RSS 链接。中文播客平台只要提供公开 RSS，就能通过代理解析单集。</p>
             </div>
             <div class="podcast-tags" aria-label="播客分类">
               <button type="button" data-podcast-query="科技播客">科技</button>
@@ -216,25 +216,25 @@
           <div class="radio-hero">
             <div>
               <span class="radio-kicker">OPEN RADIO</span>
-              <strong id="radioTitle">世界电台</strong>
-              <p>选择一个频道，拾音匣会从公共电台目录中挑选一组可播电台，适合听新闻、谈话、播客和各种音乐。</p>
+              <strong id="radioTitle">中文电台</strong>
+              <p>选择一个频道，拾音匣会优先从中国/中文公共电台目录中挑选一组可播电台，适合听新闻、谈话、交通、财经和华语音乐。</p>
             </div>
             <button id="radioShuffleBtn" type="button">随机调频</button>
           </div>
 
           <div class="radio-dial" aria-label="电台频道">
-            <button type="button" data-radio-query="news">新闻现场</button>
-            <button type="button" data-radio-query="talk">谈话频道</button>
-            <button type="button" data-radio-query="classical">古典时刻</button>
-            <button type="button" data-radio-query="jazz">爵士夜航</button>
-            <button type="button" data-radio-query="ambient">环境声场</button>
-            <button type="button" data-radio-query="electronic">电子波段</button>
-            <button type="button" data-radio-query="world">世界电台</button>
-            <button type="button" data-radio-query="podcast">播客精选</button>
+            <button type="button" data-radio-query="news">国内新闻</button>
+            <button type="button" data-radio-query="talk">中文谈话</button>
+            <button type="button" data-radio-query="finance">财经广播</button>
+            <button type="button" data-radio-query="traffic">交通广播</button>
+            <button type="button" data-radio-query="music">华语音乐</button>
+            <button type="button" data-radio-query="literature">人文读书</button>
+            <button type="button" data-radio-query="local">地方电台</button>
+            <button type="button" data-radio-query="podcast">中文播客</button>
           </div>
 
           <div class="source-note">
-            播客和电台数据来自公开目录或公开 RSS。本站不缓存、不下载、不转存音频；如某个来源无法播放，请换一个节目源。
+            播客和电台数据来自中国区公开目录、中文公共电台目录或公开 RSS。本站不缓存、不下载、不转存音频；如某个来源无法播放，请换一个节目源。
           </div>
           <div id="openMusicStatus" class="source-status">搜索播客、粘贴 RSS，或选择频道开始调频。</div>
           <div id="openMusicResults" class="track-list"></div>

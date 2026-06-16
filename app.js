@@ -5,14 +5,14 @@ const OPEN_MUSIC_RESULT_LIMIT = 12;
 const RADIO_STATION_LIMIT = 24;
 
 const radioChannels = {
-  news: { title: "新闻现场", query: "news" },
-  talk: { title: "谈话频道", query: "talk" },
-  classical: { title: "古典时刻", query: "classical" },
-  jazz: { title: "爵士夜航", query: "jazz" },
-  ambient: { title: "环境声场", query: "ambient" },
-  electronic: { title: "电子波段", query: "electronic" },
-  world: { title: "世界电台", query: "world" },
-  podcast: { title: "播客精选", query: "podcast" },
+  news: { title: "国内新闻", query: "新闻" },
+  talk: { title: "中文谈话", query: "谈话" },
+  finance: { title: "财经广播", query: "财经" },
+  traffic: { title: "交通广播", query: "交通" },
+  music: { title: "华语音乐", query: "音乐" },
+  literature: { title: "人文读书", query: "读书" },
+  local: { title: "地方电台", query: "广播" },
+  podcast: { title: "中文播客", query: "播客" },
 };
 
 const els = {
@@ -664,14 +664,18 @@ async function searchOpenMusic(query) {
 
 function getRadioQuery(query) {
   const key = query.trim();
-  return radioChannels[key]?.query || key || "world";
+  return radioChannels[key]?.query || key || "中文";
 }
 
 async function searchRadioStations(query) {
-  const tagged = await radioBrowserSearch({ tag: query });
-  const named = tagged.length >= 4 ? [] : await radioBrowserSearch({ name: query });
+  const term = toDomesticRadioQuery(query);
+  const domesticTagged = await radioBrowserSearch({ countrycode: "CN", tag: term });
+  const domesticNamed = await radioBrowserSearch({ countrycode: "CN", name: term });
+  const chineseTagged = await radioBrowserSearch({ language: "chinese", tag: term });
+  const chineseNamed = await radioBrowserSearch({ language: "chinese", name: term });
+  const domesticFallback = domesticTagged.length + domesticNamed.length >= 4 ? [] : await radioBrowserSearch({ countrycode: "CN" });
   const seen = new Set();
-  return [...tagged, ...named]
+  return [...domesticTagged, ...domesticNamed, ...chineseTagged, ...chineseNamed, ...domesticFallback]
     .map(createRadioTrack)
     .filter((track) => {
       if (!track || seen.has(track.id)) return false;
@@ -679,6 +683,25 @@ async function searchRadioStations(query) {
       return true;
     })
     .slice(0, OPEN_MUSIC_RESULT_LIMIT);
+}
+
+function toDomesticRadioQuery(query) {
+  const map = {
+    news: "新闻",
+    talk: "谈话",
+    finance: "财经",
+    traffic: "交通",
+    music: "音乐",
+    literature: "读书",
+    local: "广播",
+    podcast: "播客",
+    world: "中文",
+    ambient: "音乐",
+    jazz: "音乐",
+    classical: "音乐",
+    electronic: "音乐",
+  };
+  return map[query] || query || "中文";
 }
 
 async function radioBrowserSearch(params) {
@@ -896,7 +919,7 @@ els.openMusicForm.addEventListener("submit", async (event) => {
 });
 
 els.radioSearchBtn.addEventListener("click", () => {
-  tuneRadio(els.openMusicQuery.value.trim() || "world");
+  tuneRadio(els.openMusicQuery.value.trim() || "中文");
 });
 
 document.querySelectorAll("[data-podcast-query]").forEach((button) => {

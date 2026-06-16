@@ -10,7 +10,7 @@
 - Keeps playlists and lyrics in browser local storage.
 - Provides an original soundscape workspace with audio visualization, mood themes, listening stats, and a random local mix builder.
 - Includes a stage mode for a focused now-playing experience.
-- Includes an optional podcast and radio view backed by public RSS feeds and public radio directories.
+- Includes an optional podcast and radio view backed by China-region public podcast search, public RSS feeds, and Chinese/domestic public radio directories.
 - Includes optional AI summary/transcript placeholders that require your own proxy-side model provider.
 - Does not upload, cache, scrape private services, download, or distribute music files.
 - Does not use any third-party music service code, name, icon, playlist, lyrics, video, account system, or restricted endpoint.
@@ -41,7 +41,7 @@ The static site can run without a backend, but podcast search and RSS parsing ne
 window.SHIYIN_RADIO_PROXY_URL = "https://your-deno-project.deno.dev";
 ```
 
-The proxy only returns public RSS episode audio links and public radio stream links. It does not store audio files or use restricted platform APIs.
+The proxy only returns public RSS episode audio links and public radio stream links, with Chinese/domestic sources prioritized where available. It does not store audio files or use restricted platform APIs.
 
 AI endpoints are intentionally placeholders until you add your own model provider and keys on the proxy side. Do not put model API keys in `config.js` or other public frontend files.
 
