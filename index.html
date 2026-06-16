@@ -34,6 +34,7 @@
           <button class="nav-item" data-view="open" data-icon="◉" title="播客电台">播客电台</button>
           <button class="nav-item" data-view="playlists" data-icon="♬" title="歌单">歌单</button>
           <button class="nav-item" data-view="lyrics" data-icon="≋" title="歌词">歌词</button>
+          <button class="nav-item" data-view="ai" data-icon="✦" title="AI">AI</button>
           <button class="nav-item" data-view="about" data-icon="⚙" title="合规说明">合规说明</button>
         </nav>
 
@@ -267,6 +268,27 @@
               placeholder="[00:12.00] 在这里粘贴歌词&#10;[00:18.00] 支持 LRC 时间轴"
             ></textarea>
             <div id="lyricsDisplay" class="lyrics-display">暂无歌词</div>
+          </div>
+        </section>
+
+        <section id="aiView" class="view">
+          <div class="section-head">
+            <div>
+              <h2>AI</h2>
+              <p>为当前播客单集生成摘要或转文字；需要你部署自己的代理和模型服务。</p>
+            </div>
+          </div>
+          <div class="ai-panel">
+            <div>
+              <span class="radio-kicker">OPTIONAL AI</span>
+              <strong id="aiTrackTitle">未选择节目</strong>
+              <p id="aiTrackMeta">播放或选择公开播客单集后，可在这里发起摘要或转文字。</p>
+            </div>
+            <div class="ai-actions">
+              <button id="aiSummaryBtn" type="button">生成摘要</button>
+              <button id="aiTranscriptBtn" type="button">转文字</button>
+            </div>
+            <pre id="aiOutput">AI 功能默认不启用。公开发布时请只处理你有权处理的音频，并在 Deno 代理里配置自己的模型密钥。</pre>
           </div>
         </section>
 

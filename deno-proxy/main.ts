@@ -5,7 +5,7 @@ const RADIO_FETCH_LIMIT = 36;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -16,7 +16,7 @@ Deno.serve(async (request) => {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  if (request.method !== "GET") {
+  if (!["GET", "POST"].includes(request.method)) {
     return json({ error: "Method not allowed" }, 405);
   }
 
@@ -58,6 +58,18 @@ Deno.serve(async (request) => {
     } catch (error) {
       return json({ error: errorMessage(error) }, 502);
     }
+  }
+
+  if (url.pathname === "/ai/summary" || url.pathname === "/ai/transcript") {
+    if (request.method !== "POST") {
+      return json({ error: "Method not allowed" }, 405);
+    }
+    return json(
+      {
+        error: "AI is not configured. Add your own model provider in this Deno proxy before enabling summaries or transcripts.",
+      },
+      501,
+    );
   }
 
   return json({ error: "Not found" }, 404);

@@ -42,6 +42,11 @@ const els = {
   lyricsInput: document.querySelector("#lyricsInput"),
   lyricsDisplay: document.querySelector("#lyricsDisplay"),
   saveLyricsBtn: document.querySelector("#saveLyricsBtn"),
+  aiTrackTitle: document.querySelector("#aiTrackTitle"),
+  aiTrackMeta: document.querySelector("#aiTrackMeta"),
+  aiSummaryBtn: document.querySelector("#aiSummaryBtn"),
+  aiTranscriptBtn: document.querySelector("#aiTranscriptBtn"),
+  aiOutput: document.querySelector("#aiOutput"),
   clearLibraryBtn: document.querySelector("#clearLibraryBtn"),
   clearQueueBtn: document.querySelector("#clearQueueBtn"),
   nowTitle: document.querySelector("#nowTitle"),
@@ -68,6 +73,7 @@ const views = {
   open: document.querySelector("#openView"),
   playlists: document.querySelector("#playlistsView"),
   lyrics: document.querySelector("#lyricsView"),
+  ai: document.querySelector("#aiView"),
   about: document.querySelector("#aboutView"),
 };
 
@@ -159,6 +165,7 @@ function setView(name) {
     open: "播客电台",
     playlists: "歌单",
     lyrics: "歌词",
+    ai: "AI",
     about: "合规说明",
   }[name];
 }
@@ -188,6 +195,7 @@ function render() {
   renderQueue();
   renderPlaylists();
   renderLyrics();
+  renderAiPanel();
   renderStudio();
   renderPodcastResults();
   renderOpenMusic();
@@ -307,6 +315,15 @@ function renderLyrics() {
     .join("");
 }
 
+function renderAiPanel() {
+  if (!els.aiTrackTitle) return;
+  const track = findTrack(state.currentId);
+  els.aiTrackTitle.textContent = track?.title || "未选择节目";
+  els.aiTrackMeta.textContent = track
+    ? `${track.artist || "Unknown creator"} · ${track.sourceName || track.fileName}`
+    : "播放或选择公开播客单集后，可在这里发起摘要或转文字。";
+}
+
 function renderStudio() {
   els.trackCountStat.textContent = String(state.tracks.length);
   const totalDuration = state.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
@@ -416,7 +433,7 @@ function move(delta) {
 }
 
 function updateNowPlaying() {
-  const track = state.tracks.find((item) => item.id === state.currentId);
+  const track = findTrack(state.currentId);
   els.nowTitle.textContent = track?.title || "未选择歌曲";
   els.nowArtist.textContent = track?.artist || "导入本地音频开始播放";
   els.playBtn.textContent = els.audio.paused ? "▶" : "Ⅱ";
@@ -425,6 +442,7 @@ function updateNowPlaying() {
   els.repeatBtn.textContent = state.repeat === "one" ? "①" : "↻";
   els.focusModeBtn.classList.toggle("repeat-on", document.body.classList.contains("stage-mode"));
   els.themeToggleBtn.textContent = state.theme === "dark" ? "☾" : "☼";
+  renderAiPanel();
 }
 
 function setupVisualizer() {
@@ -531,6 +549,39 @@ async function fetchJson(url) {
     return await response.json();
   } finally {
     window.clearTimeout(timeoutId);
+  }
+}
+
+async function requestAiTask(kind) {
+  const proxyUrl = getRadioProxyUrl();
+  const track = findTrack(state.currentId);
+  if (!track) {
+    els.aiOutput.textContent = "请先选择一个公开播客单集或电台节目。";
+    return;
+  }
+  if (!proxyUrl) {
+    els.aiOutput.textContent = "AI 功能需要先在 config.js 里配置你的 Deno 代理地址。";
+    return;
+  }
+
+  const endpoint = kind === "summary" ? "/ai/summary" : "/ai/transcript";
+  els.aiOutput.textContent = kind === "summary" ? "正在请求摘要..." : "正在请求转文字...";
+  try {
+    const response = await fetch(`${proxyUrl}${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: track.title,
+        artist: track.artist,
+        sourceUrl: track.sourceUrl,
+        audioUrl: track.url,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `AI 请求失败：${response.status}`);
+    els.aiOutput.textContent = data.text || data.summary || data.transcript || "没有返回内容。";
+  } catch (error) {
+    els.aiOutput.textContent = `${error.message || "AI 请求失败"}。`;
   }
 }
 
@@ -924,6 +975,9 @@ els.saveLyricsBtn.addEventListener("click", () => {
   saveJson("lumaCrate.lyrics", state.lyrics);
   renderLyrics();
 });
+
+els.aiSummaryBtn.addEventListener("click", () => requestAiTask("summary"));
+els.aiTranscriptBtn.addEventListener("click", () => requestAiTask("transcript"));
 
 els.clearLibraryBtn.addEventListener("click", () => {
   if (!confirm("清空当前浏览器里的本地曲库列表？文件本身不会被删除。")) return;

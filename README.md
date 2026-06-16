@@ -11,8 +11,9 @@
 - Provides an original soundscape workspace with audio visualization, mood themes, listening stats, and a random local mix builder.
 - Includes a stage mode for a focused now-playing experience.
 - Includes an optional podcast and radio view backed by public RSS feeds and public radio directories.
+- Includes optional AI summary/transcript placeholders that require your own proxy-side model provider.
 - Does not upload, cache, scrape private services, download, or distribute music files.
-- Does not use any third-party music service API, code, name, icon, playlist, lyrics, video, account system, or private endpoint.
+- Does not use any third-party music service code, name, icon, playlist, lyrics, video, account system, or restricted endpoint.
 
 ## Compliance Boundary
 
@@ -20,7 +21,7 @@ This project is intended to be a neutral player for files that the user owns or 
 
 Do not deploy or modify it to:
 
-- Connect to non-public music platform APIs.
+- Connect to restricted music platform APIs.
 - Offer copyrighted songs, lyrics, album art, or videos without authorization.
 - Provide download, ripping, cache extraction, restricted-content access, or account automation features.
 - Use names, logos, screenshots, or visual identity from third-party music services.
@@ -40,7 +41,9 @@ The static site can run without a backend, but podcast search and RSS parsing ne
 window.SHIYIN_RADIO_PROXY_URL = "https://your-deno-project.deno.dev";
 ```
 
-The proxy only returns public RSS episode audio links and public radio stream links. It does not store audio files or use private platform APIs.
+The proxy only returns public RSS episode audio links and public radio stream links. It does not store audio files or use restricted platform APIs.
+
+AI endpoints are intentionally placeholders until you add your own model provider and keys on the proxy side. Do not put model API keys in `config.js` or other public frontend files.
 
 No software project can guarantee absolute legal safety in every jurisdiction. For a public service, consult a qualified lawyer before adding online music sources or user-upload hosting.
 

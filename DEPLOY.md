@@ -18,8 +18,10 @@ Required files:
 Optional Deno proxy:
 
 - Deploy `deno-proxy/main.ts` to Deno Deploy.
+- Keep `deno-proxy/README.md` as deployment notes.
 - Set the deployed URL in `config.js`.
 - Keep the proxy limited to public RSS feeds and public radio directories.
+- AI endpoints are placeholders until you add your own proxy-side model provider.
 
 GitHub Pages settings:
 
