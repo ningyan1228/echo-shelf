@@ -386,7 +386,9 @@ function playTrack(id) {
     console.warn("Visualizer setup failed, audio playback will continue.", error);
   }
   els.audio.play().catch(() => {
-    showPlayerMessage(track.remote ? "这个电台流暂时无法播放，请换一个电台或频道。" : "浏览器拒绝或无法解码这个音频文件。请换成标准音频格式后再试。");
+    if (!markRemoteTrackFailed(track)) {
+      showPlayerMessage("浏览器拒绝或无法解码这个音频文件。请换成标准音频格式后再试。");
+    }
   });
   render();
 }
@@ -394,6 +396,20 @@ function playTrack(id) {
 function recordRadioClick(track) {
   if (!track?.radioClickUrl) return;
   fetch(track.radioClickUrl).catch(() => {});
+}
+
+function markRemoteTrackFailed(track) {
+  if (!track?.remote) return false;
+  track.playable = false;
+  renderOpenMusic();
+  const nextRemote = state.openResults.find((item) => item.playable && item.id !== track.id);
+  if (nextRemote) {
+    showPlayerMessage("这个节目源不可用，正在切换到下一个。");
+    window.setTimeout(() => playTrack(nextRemote.id), 800);
+    return true;
+  }
+  showPlayerMessage("这一组在线节目源都暂时不可用，请换一个频道。");
+  return true;
 }
 
 function togglePlay() {
@@ -1094,10 +1110,7 @@ els.audio.addEventListener("loadedmetadata", () => {
 els.audio.addEventListener("error", () => {
   const error = els.audio.error;
   const track = findTrack(state.currentId);
-  if (track?.remote) {
-    showPlayerMessage("这个在线节目源当前不可用或被浏览器拦截，请换一个电台。");
-    return;
-  }
+  if (markRemoteTrackFailed(track)) return;
   const reason = error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
     ? "浏览器不支持这个音频格式。"
     : "音频加载失败。";

@@ -85,14 +85,16 @@ async function searchRadio(query) {
   const stations = [...domesticTagged, ...domesticNamed, ...chineseTagged, ...chineseNamed, ...domesticFallback];
   const seen = new Set();
 
-  return stations
+  const candidates = stations
     .map(createRadioTrack)
     .filter((track) => {
       if (!track || seen.has(track.id)) return false;
       seen.add(track.id);
       return true;
-    })
-    .slice(0, RESULT_LIMIT);
+    });
+
+  const checked = await Promise.all(candidates.slice(0, RADIO_FETCH_LIMIT).map(validateRadioTrack));
+  return checked.filter(Boolean).slice(0, RESULT_LIMIT);
 }
 
 function toDomesticRadioQuery(query) {
@@ -153,6 +155,33 @@ function createRadioTrack(station) {
     licenseLabel: "LIVE",
     radioClickUrl: `${RADIO_BROWSER_API_URL}/url/${station.stationuuid}`,
   };
+}
+
+async function validateRadioTrack(track) {
+  if (!track?.url || !track.url.startsWith("https://")) return null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4500);
+  try {
+    const response = await fetch(track.url, {
+      headers: {
+        "Accept": "audio/mpeg,audio/aac,audio/ogg,audio/*;q=0.8,*/*;q=0.2",
+        "Icy-MetaData": "1",
+        "Range": "bytes=0-2048",
+        "User-Agent": "ShiyinBoxRadioProbe/1.0",
+      },
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    const type = String(response.headers.get("content-type") || "").toLowerCase();
+    await response.body?.cancel();
+    if (!response.ok && response.status !== 206) return null;
+    if (type.includes("text/html") || type.includes("application/json") || type.includes("audio/x-scpls")) return null;
+    return track;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function readPodcastFeed(feedUrl) {
