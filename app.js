@@ -100,6 +100,7 @@ const state = {
 
 document.body.dataset.mood = state.mood;
 document.body.dataset.theme = state.theme;
+els.audio.crossOrigin = "anonymous";
 els.audio.volume = Number(localStorage.getItem("lumaCrate.volume") || "0.85");
 els.volume.value = String(els.audio.volume);
 
