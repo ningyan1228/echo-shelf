@@ -1,6 +1,6 @@
 const RADIO_PROXY_URL = "";
 const ARCHIVE_SEARCH_URL = "https://archive.org/advancedsearch.php";
-const RADIO_BROWSER_API_URL = "https://de1.api.radio-browser.info/json";
+const RADIO_BROWSER_API_URL = "https://all.api.radio-browser.info/json";
 const OPEN_MUSIC_RESULT_LIMIT = 12;
 const RADIO_STATION_LIMIT = 24;
 
