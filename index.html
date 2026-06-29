@@ -213,6 +213,16 @@
           </div>
           <div id="podcastResults" class="podcast-results"></div>
 
+          <div class="podcast-panel news-panel">
+            <div>
+              <span class="radio-kicker">NEWS RSS</span>
+              <strong>新闻源</strong>
+              <p>只展示公开 RSS 的标题、摘要、发布时间和原文链接；不缓存全文，也不把新闻源放进播放器。</p>
+            </div>
+            <div id="newsSourceList" class="podcast-tags" aria-label="新闻源"></div>
+          </div>
+          <div id="newsResults" class="news-results"></div>
+
           <div class="radio-hero">
             <div>
               <span class="radio-kicker">OPEN RADIO</span>
@@ -343,6 +353,7 @@
     </div>
 
     <audio id="audio"></audio>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.18/dist/hls.min.js"></script>
     <script src="./config.js"></script>
     <script src="./app.js?v=player-theme-2" type="module"></script>
   </body>

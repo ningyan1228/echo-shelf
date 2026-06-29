@@ -26,6 +26,8 @@ const els = {
   openMusicStatus: document.querySelector("#openMusicStatus"),
   openMusicResults: document.querySelector("#openMusicResults"),
   podcastResults: document.querySelector("#podcastResults"),
+  newsSourceList: document.querySelector("#newsSourceList"),
+  newsResults: document.querySelector("#newsResults"),
   radioSearchBtn: document.querySelector("#radioSearchBtn"),
   radioTitle: document.querySelector("#radioTitle"),
   radioShuffleBtn: document.querySelector("#radioShuffleBtn"),
@@ -94,8 +96,12 @@ const state = {
   analyser: null,
   source: null,
   animationId: null,
+  hlsPlayer: null,
   openResults: [],
   podcastResults: [],
+  newsSources: [],
+  newsItems: [],
+  activeNewsSourceId: "",
 };
 
 document.body.dataset.mood = state.mood;
@@ -199,6 +205,8 @@ function render() {
   renderAiPanel();
   renderStudio();
   renderPodcastResults();
+  renderNewsSources();
+  renderNewsItems();
   renderOpenMusic();
   updateNowPlaying();
 }
@@ -369,6 +377,74 @@ function renderPodcastResults() {
   `).join("");
 }
 
+function renderNewsSources() {
+  if (!els.newsSourceList) return;
+  if (!state.newsSources.length) {
+    els.newsSourceList.innerHTML = `<span class="muted-inline">新闻源加载中</span>`;
+    return;
+  }
+  els.newsSourceList.innerHTML = state.newsSources.map((source) => `
+    <button type="button" class="${source.id === state.activeNewsSourceId ? "active" : ""}" data-news-source-id="${escapeHtml(source.id)}" title="${escapeHtml(source.license_note || "")}">
+      ${escapeHtml(source.name.replace(/｜.*/, ""))}
+    </button>
+  `).join("");
+}
+
+function renderNewsItems() {
+  if (!els.newsResults) return;
+  if (!state.newsItems.length) {
+    els.newsResults.innerHTML = "";
+    return;
+  }
+  els.newsResults.innerHTML = state.newsItems.map((item) => `
+    <article class="news-card">
+      <div>
+        <strong>${escapeHtml(item.title || "未命名新闻")}</strong>
+        <span>${escapeHtml([item.source, formatNewsDate(item.publishedAt)].filter(Boolean).join(" · "))}</span>
+      </div>
+      <p>${escapeHtml(item.summary || "")}</p>
+      <a href="${escapeHtml(item.link || "#")}" target="_blank" rel="noopener noreferrer">原文</a>
+    </article>
+  `).join("");
+}
+
+async function loadSourceDirectory() {
+  const proxyUrl = getRadioProxyUrl();
+  if (!proxyUrl || !els.newsSourceList) return;
+  try {
+    const data = await fetchJson(`${proxyUrl}/sources?type=news_rss`);
+    state.newsSources = Array.isArray(data?.sources) ? data.sources : [];
+    renderNewsSources();
+  } catch (error) {
+    els.newsSourceList.innerHTML = `<span class="muted-inline">新闻源暂时不可用</span>`;
+  }
+}
+
+async function loadNewsFeed(sourceId) {
+  const proxyUrl = getRadioProxyUrl();
+  if (!proxyUrl) return;
+  state.activeNewsSourceId = sourceId;
+  state.newsItems = [];
+  renderNewsSources();
+  els.newsResults.innerHTML = `<div class="source-status">正在读取新闻 RSS...</div>`;
+  try {
+    const url = new URL(`${proxyUrl}/news/feed`);
+    url.searchParams.set("id", sourceId);
+    const data = await fetchJson(url);
+    state.newsItems = Array.isArray(data?.items) ? data.items : [];
+    renderNewsItems();
+  } catch (error) {
+    els.newsResults.innerHTML = `<div class="source-status">${escapeHtml(error.message || "新闻源读取失败")}。</div>`;
+  }
+}
+
+function formatNewsDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
 function playTrack(id) {
   const track = findTrack(id);
   if (!track) return;
@@ -379,7 +455,7 @@ function playTrack(id) {
 
   state.currentId = id;
   if (!state.queue.includes(id)) state.queue.push(id);
-  els.audio.src = getUrl(track);
+  attachAudioSource(track);
   recordRadioClick(track);
   try {
     setupVisualizer();
@@ -392,6 +468,47 @@ function playTrack(id) {
     }
   });
   render();
+}
+
+function attachAudioSource(track) {
+  destroyHlsPlayer();
+  const url = getUrl(track);
+  const isHls = track.streamType === "hls" || /\.m3u8(?:$|\?)/i.test(url);
+  if (!isHls) {
+    els.audio.src = url;
+    return;
+  }
+
+  if (els.audio.canPlayType("application/vnd.apple.mpegurl")) {
+    els.audio.src = url;
+    return;
+  }
+
+  const HlsCtor = window.Hls;
+  if (HlsCtor?.isSupported?.()) {
+    state.hlsPlayer = new HlsCtor({
+      enableWorker: true,
+      lowLatencyMode: true,
+    });
+    state.hlsPlayer.loadSource(url);
+    state.hlsPlayer.attachMedia(els.audio);
+    state.hlsPlayer.on(HlsCtor.Events.ERROR, (event, data) => {
+      if (data?.fatal) {
+        destroyHlsPlayer();
+        markRemoteTrackFailed(track);
+      }
+    });
+    return;
+  }
+
+  track.playable = false;
+  showPlayerMessage("当前浏览器不支持 HLS 直播源，请换一个频道。 chromium系浏览器通常需要 hls.js 成功加载。");
+}
+
+function destroyHlsPlayer() {
+  if (!state.hlsPlayer) return;
+  state.hlsPlayer.destroy();
+  state.hlsPlayer = null;
 }
 
 function recordRadioClick(track) {
@@ -618,6 +735,7 @@ function normalizeOpenTrack(track) {
     sourceUrl: track.sourceUrl || "",
     licenseUrl: track.licenseUrl || "",
     licenseLabel: track.licenseLabel || "Open license",
+    streamType: track.streamType || (/\.m3u8(?:$|\?)/i.test(track.url || track.fileName || "") ? "hls" : "audio"),
   };
 }
 
@@ -929,7 +1047,9 @@ els.openMusicForm.addEventListener("submit", async (event) => {
     state.openResults = [];
     els.openMusicStatus.textContent = podcasts.length ? `找到 ${podcasts.length} 个播客。点击“单集”读取 RSS。` : "没有找到相关播客，换个关键词试试。";
     renderPodcastResults();
-    renderOpenMusic();
+  renderNewsSources();
+  renderNewsItems();
+  renderOpenMusic();
   } catch (error) {
     els.openMusicStatus.textContent = `${error.message || "播客搜索失败"}。你也可以切换到电台搜索。`;
   }
@@ -954,6 +1074,12 @@ els.radioShuffleBtn.addEventListener("click", () => {
   const channels = Array.from(document.querySelectorAll("[data-radio-query]"));
   const channel = channels[Math.floor(Math.random() * channels.length)];
   if (channel) tuneRadio(channel.dataset.radioQuery, channel.textContent.trim());
+});
+
+els.newsSourceList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-news-source-id]");
+  if (!button) return;
+  loadNewsFeed(button.dataset.newsSourceId);
 });
 
 els.podcastResults.addEventListener("click", async (event) => {
@@ -1135,4 +1261,5 @@ els.audio.addEventListener("ended", () => {
   if (state.repeat === "all" || state.queue.length > 1) move(1);
 });
 
+loadSourceDirectory();
 render();
